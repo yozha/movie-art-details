@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup for API <= 30 (android:fullBackupContent).
+  Only shared_prefs/settings.xml is backed up: appearance, language, vote threshold, cache limit, and
+  neutral color (the same harmless values as the getPreferences allowlist).
+  With an <include> present, everything else is excluded, including:
+  - noBackupFilesDir (encrypted TMDB key, manual corrections, title history), always excluded by the platform;
+  - shared_prefs/settings_local.xml (diagnostic flags and the opt-in for logging titles);
+  - files/ (composites, diagnostic log), cache/, databases/, external storage.
+  The Android Keystore key never leaves the device in any case.
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="settings.xml" />
+</full-backup-content>

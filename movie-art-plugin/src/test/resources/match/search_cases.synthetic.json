@@ -1,0 +1,2799 @@
+{
+ "_comment": "SYNTHETIC TMDB /3/search/movie and /3/search/tv responses (page=1), written by hand following the TMDB API documentation. IDs and numbers are plausible but need not match TMDB; 99xxxx IDs are invented. expect=null marks the reject subset (zero false accepts).",
+ "cases": [
+  {
+   "name": "avatar_franchise_https_card",
+   "raw": "Аватар / Avatar",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 19995
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 19995,
+        "title": "Аватар",
+        "original_title": "Avatar",
+        "release_date": "2009-12-15",
+        "popularity": 30.5,
+        "vote_count": 32000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 76600,
+        "title": "Аватар: Путь воды",
+        "original_title": "Avatar: The Way of Water",
+        "release_date": "2022-12-14",
+        "popularity": 60.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 83533,
+        "title": "Аватар: Пламя и пепел",
+        "original_title": "Avatar: Fire and Ash",
+        "release_date": "2025-12-17",
+        "popularity": 90.0,
+        "vote_count": 900,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990001,
+        "title": "Аватар",
+        "original_title": "Avatar",
+        "release_date": "2004-05-01",
+        "popularity": 1.2,
+        "vote_count": 20,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 4
+     }
+    },
+    {
+     "media": "movie",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 19995,
+        "title": "Аватар",
+        "original_title": "Avatar",
+        "release_date": "2009-12-15",
+        "popularity": 30.5,
+        "vote_count": 32000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 76600,
+        "title": "Аватар: Шлях води",
+        "original_title": "Avatar: The Way of Water",
+        "release_date": "2022-12-14",
+        "popularity": 60.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "tv",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 246,
+        "name": "Аватар: Легенда об Аанге",
+        "original_name": "Avatar: The Last Airbender",
+        "first_air_date": "2005-02-21",
+        "popularity": 50.0,
+        "vote_count": 4000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "avatar_year_unknown_type",
+   "raw": "Avatar (2009)",
+   "type": null,
+   "iconUri": null,
+   "expect": {
+    "media": "movie",
+    "id": 19995
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 19995,
+        "title": "Avatar",
+        "original_title": "Avatar",
+        "release_date": "2009-12-15",
+        "popularity": 30.5,
+        "vote_count": 32000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990001,
+        "title": "Avatar",
+        "original_title": "Avatar",
+        "release_date": "2004-05-01",
+        "popularity": 1.2,
+        "vote_count": 20,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 76600,
+        "title": "Avatar: The Way of Water",
+        "original_title": "Avatar: The Way of Water",
+        "release_date": "2022-12-14",
+        "popularity": 60.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 246,
+        "name": "Avatar: The Last Airbender",
+        "original_name": "Avatar: The Last Airbender",
+        "first_air_date": "2005-02-21",
+        "popularity": 50.0,
+        "vote_count": 4000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "last_airbender_series",
+   "raw": "Avatar: The Last Airbender",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "tv",
+    "id": 246
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 246,
+        "name": "Avatar: The Last Airbender",
+        "original_name": "Avatar: The Last Airbender",
+        "first_air_date": "2005-02-21",
+        "popularity": 50.0,
+        "vote_count": 4000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990030,
+        "name": "Avatar: The Last Airbender Recap",
+        "original_name": "Avatar: The Last Airbender Recap",
+        "first_air_date": "2021-01-01",
+        "popularity": 0.5,
+        "vote_count": 2,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 10196,
+        "title": "The Last Airbender",
+        "original_title": "The Last Airbender",
+        "release_date": "2010-06-30",
+        "popularity": 25.0,
+        "vote_count": 5000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 19995,
+        "title": "Avatar",
+        "original_title": "Avatar",
+        "release_date": "2009-12-15",
+        "popularity": 30.5,
+        "vote_count": 32000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "dune_1984_explicit_year",
+   "raw": "Dune (1984)",
+   "type": 0,
+   "iconUri": null,
+   "expect": {
+    "media": "movie",
+    "id": 841
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Dune: Part Two",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 120.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "dune_2021_vlc_file",
+   "raw": "Dune.2021.2160p.WEB-DL.DDP5.1.Atmos.HDR.HEVC-GROUP.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 438631
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Dune: Part Two",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 120.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 90228,
+        "name": "Dune: Prophecy",
+        "original_name": "Dune: Prophecy",
+        "first_air_date": "2024-11-17",
+        "popularity": 70.0,
+        "vote_count": 700,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990010,
+        "name": "Dune",
+        "original_name": "Frank Herbert's Dune",
+        "first_air_date": "2000-12-03",
+        "popularity": 8.0,
+        "vote_count": 300,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "dune_https_card_no_year_tie_by_votes",
+   "raw": "Дюна / Dune",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 438631
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Дюна: Часть вторая",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 120.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "movie",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "solaris_same_name_year_picks_1972",
+   "raw": "Солярис (1972)",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 593
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 2103,
+        "title": "Солярис",
+        "original_title": "Solaris",
+        "release_date": "2002-11-27",
+        "popularity": 15.0,
+        "vote_count": 2000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 593,
+        "title": "Солярис",
+        "original_title": "Солярис",
+        "release_date": "1972-02-05",
+        "popularity": 12.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "movie",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 2103,
+        "title": "Соляріс",
+        "original_title": "Solaris",
+        "release_date": "2002-11-27",
+        "popularity": 15.0,
+        "vote_count": 2000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 593,
+        "title": "Соляріс",
+        "original_title": "Солярис",
+        "release_date": "1972-02-05",
+        "popularity": 12.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "up_year_off_by_one",
+   "raw": "Up (2008)",
+   "type": 0,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "movie",
+    "id": 14160
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 14160,
+        "title": "Up",
+        "original_title": "Up",
+        "release_date": "2009-05-28",
+        "popularity": 18.0,
+        "vote_count": 5000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990040,
+        "title": "Up",
+        "original_title": "Up",
+        "release_date": "2024-03-01",
+        "popularity": 0.8,
+        "vote_count": 12,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "rear_window_vlc_file",
+   "raw": "Alfred Hitchcock's Rear Window 1954 1080p BluRay REMUX AVC FLAC 2.0 - SOMEGROUP",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 990290
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990290,
+        "title": "Alfred Hitchcock's Rear Window",
+        "original_title": "Rear Window",
+        "release_date": "1954-09-01",
+        "popularity": 2.0,
+        "vote_count": 25,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990291,
+        "title": "Rear Window",
+        "original_title": "Rear Window",
+        "release_date": "1998-11-22",
+        "popularity": 20.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990292,
+        "title": "Rear Window",
+        "original_title": "Rear Window",
+        "release_date": "2016-06-24",
+        "popularity": 6.0,
+        "vote_count": 300,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 990293,
+        "name": "Rear Window",
+        "original_name": "Rear Window",
+        "first_air_date": "2020-01-01",
+        "popularity": 1.0,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "up_wholphin_tie_by_votes",
+   "raw": "Up",
+   "type": 0,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "movie",
+    "id": 14160
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 14160,
+        "title": "Up",
+        "original_title": "Up",
+        "release_date": "2009-05-28",
+        "popularity": 18.0,
+        "vote_count": 5000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990040,
+        "title": "Up",
+        "original_title": "Up",
+        "release_date": "2024-03-01",
+        "popularity": 0.8,
+        "vote_count": 12,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 22947,
+        "title": "Up in the Air",
+        "original_title": "Up in the Air",
+        "release_date": "2009-11-18",
+        "popularity": 60.0,
+        "vote_count": 8000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "fargo_wholphin_episode",
+   "raw": "Fargo",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "tv",
+    "id": 60622
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 60622,
+        "name": "Fargo",
+        "original_name": "Fargo",
+        "first_air_date": "2014-04-15",
+        "popularity": 45.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990060,
+        "name": "Fargo: The Lost Tapes",
+        "original_name": "Fargo: The Lost Tapes",
+        "first_air_date": "2022-06-01",
+        "popularity": 2.0,
+        "vote_count": 40,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990061,
+        "title": "Fargo: Abyss",
+        "original_title": "Фарго",
+        "release_date": "2021-04-15",
+        "popularity": 12.0,
+        "vote_count": 500,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990062,
+        "title": "Fargo Diaries",
+        "original_title": "Fargo Diaries",
+        "release_date": "2012-05-25",
+        "popularity": 15.0,
+        "vote_count": 1800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "gravity_falls_wholphin",
+   "raw": "Gravity Falls",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "tv",
+    "id": 40075
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 40075,
+        "name": "Gravity Falls",
+        "original_name": "Gravity Falls",
+        "first_air_date": "2012-06-15",
+        "popularity": 12.0,
+        "vote_count": 400,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990070,
+        "title": "Falls to Gravity",
+        "original_title": "Falls to Gravity",
+        "release_date": "2015-01-01",
+        "popularity": 0.5,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "bear_uk_series",
+   "raw": "Ведмідь / The Bear",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "tv",
+    "id": 136315
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 136315,
+        "name": "Ведмідь",
+        "original_name": "The Bear",
+        "first_air_date": "2022-06-23",
+        "popularity": 40.0,
+        "vote_count": 600,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990021,
+        "name": "Борода",
+        "original_name": "The Beard",
+        "first_air_date": "2018-03-01",
+        "popularity": 1.0,
+        "vote_count": 5,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "bear_episode_file",
+   "raw": "The.Bear.S01E02.7.00.P.M.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "tv",
+    "id": 136315
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 136315,
+        "name": "The Bear",
+        "original_name": "The Bear",
+        "first_air_date": "2022-06-23",
+        "popularity": 40.0,
+        "vote_count": 600,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990020,
+        "title": "The Beard",
+        "original_title": "The Beard",
+        "release_date": "2018-03-01",
+        "popularity": 1.0,
+        "vote_count": 5,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "breaking_bad_episode_file",
+   "raw": "Breaking.Bad.S05E14.Ozymandias.720p.WEB-DL.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "tv",
+    "id": 1396
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 1396,
+        "name": "Breaking Bad",
+        "original_name": "Breaking Bad",
+        "first_air_date": "2008-01-20",
+        "popularity": 300.0,
+        "vote_count": 15000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 559969,
+        "title": "El Camino: A Breaking Bad Movie",
+        "original_title": "El Camino: A Breaking Bad Movie",
+        "release_date": "2019-10-11",
+        "popularity": 30.0,
+        "vote_count": 5000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "film_1917_tie_by_votes",
+   "raw": "1917",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 530915
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 530915,
+        "title": "1917",
+        "original_title": "1917",
+        "release_date": "2019-12-25",
+        "popularity": 40.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990080,
+        "title": "1917",
+        "original_title": "1917",
+        "release_date": "1970-01-01",
+        "popularity": 0.6,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "wonder_woman_1984_number_in_title",
+   "raw": "Wonder Woman 1984",
+   "type": 0,
+   "iconUri": null,
+   "expect": {
+    "media": "movie",
+    "id": 464052
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 297762,
+        "title": "Wonder Woman",
+        "original_title": "Wonder Woman",
+        "release_date": "2017-05-30",
+        "popularity": 60.0,
+        "vote_count": 18000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 464052,
+        "title": "Wonder Woman 1984",
+        "original_title": "Wonder Woman 1984",
+        "release_date": "2020-12-16",
+        "popularity": 50.0,
+        "vote_count": 8000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "sherlock_series_vs_movie",
+   "raw": "Шерлок / Sherlock",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "tv",
+    "id": 19885
+   },
+   "responses": [
+    {
+     "media": "tv",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 19885,
+        "name": "Шерлок",
+        "original_name": "Sherlock",
+        "first_air_date": "2010-07-25",
+        "popularity": 80.0,
+        "vote_count": 9000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990090,
+        "name": "Шерлок Холмс",
+        "original_name": "Sherlock Holmes",
+        "first_air_date": "1984-04-24",
+        "popularity": 5.0,
+        "vote_count": 300,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "tv",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 19885,
+        "name": "Шерлок",
+        "original_name": "Sherlock",
+        "first_air_date": "2010-07-25",
+        "popularity": 80.0,
+        "vote_count": 9000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 10528,
+        "title": "Шерлок Холмс",
+        "original_title": "Sherlock Holmes",
+        "release_date": "2009-12-23",
+        "popularity": 40.0,
+        "vote_count": 14000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "matrix_tmdb_tag",
+   "raw": "Матрица [tmdbid-603]",
+   "type": null,
+   "iconUri": null,
+   "expect": {
+    "media": "movie",
+    "id": 603
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 603,
+        "title": "Матрица",
+        "original_title": "The Matrix",
+        "release_date": "1999-03-30",
+        "popularity": 70.0,
+        "vote_count": 25000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 604,
+        "title": "Матрица: Перезагрузка",
+        "original_title": "The Matrix Reloaded",
+        "release_date": "2003-05-15",
+        "popularity": 30.0,
+        "vote_count": 11000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "interstellar_vlc_file",
+   "raw": "Interstellar 2014 1080p BluRay x264",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 157336
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 157336,
+        "title": "Interstellar",
+        "original_title": "Interstellar",
+        "release_date": "2014-11-05",
+        "popularity": 150.0,
+        "vote_count": 35000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990100,
+        "title": "Interstellar Wars",
+        "original_title": "Interstellar Wars",
+        "release_date": "2016-01-01",
+        "popularity": 1.0,
+        "vote_count": 10,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "wonder_woman_1984_vlc_file_not_old_series",
+   "raw": "Wonder.Woman.1984.1080p.WEB-DL.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 464052
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 297762,
+        "title": "Wonder Woman",
+        "original_title": "Wonder Woman",
+        "release_date": "2017-05-30",
+        "popularity": 60.0,
+        "vote_count": 18000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 464052,
+        "title": "Wonder Woman 1984",
+        "original_title": "Wonder Woman 1984",
+        "release_date": "2020-12-16",
+        "popularity": 40.0,
+        "vote_count": 8000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990250,
+        "name": "Wonder Woman",
+        "original_name": "Wonder Woman",
+        "first_air_date": "1975-11-07",
+        "popularity": 15.0,
+        "vote_count": 150,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "star_wars_https_card_episode_in_title",
+   "raw": "Звёздные войны: Эпизод 4 – Новая надежда / Star Wars",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 11
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 11,
+        "title": "Звёздные войны: Эпизод 4 – Новая надежда",
+        "original_title": "Star Wars",
+        "release_date": "1977-05-25",
+        "popularity": 80.0,
+        "vote_count": 20000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 1891,
+        "title": "Звёздные войны: Эпизод 5 – Империя наносит ответный удар",
+        "original_title": "The Empire Strikes Back",
+        "release_date": "1980-05-20",
+        "popularity": 50.0,
+        "vote_count": 17000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 1892,
+        "title": "Звёздные войны: Эпизод 6 – Возвращение джедая",
+        "original_title": "Return of the Jedi",
+        "release_date": "1983-05-25",
+        "popularity": 40.0,
+        "vote_count": 15000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 1893,
+        "title": "Звёздные войны: Эпизод 1 – Скрытая угроза",
+        "original_title": "Star Wars: Episode I - The Phantom Menace",
+        "release_date": "1999-05-19",
+        "popularity": 45.0,
+        "vote_count": 14000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 4
+     }
+    }
+   ]
+  },
+  {
+   "name": "open_season_2_https_card_season_in_title",
+   "raw": "Сезон охоты 2 / Open Season 2",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 990261
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 7484,
+        "title": "Сезон охоты",
+        "original_title": "Open Season",
+        "release_date": "2006-09-29",
+        "popularity": 30.0,
+        "vote_count": 3500,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990261,
+        "title": "Сезон охоты 2",
+        "original_title": "Open Season 2",
+        "release_date": "2008-09-24",
+        "popularity": 15.0,
+        "vote_count": 900,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990262,
+        "title": "Сезон охоты 3",
+        "original_title": "Open Season 3",
+        "release_date": "2010-10-21",
+        "popularity": 12.0,
+        "vote_count": 600,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "film_10x10_wholphin",
+   "raw": "10x10",
+   "type": 0,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": {
+    "media": "movie",
+    "id": 990270
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990270,
+        "title": "10x10",
+        "original_title": "10x10",
+        "release_date": "2018-04-13",
+        "popularity": 8.0,
+        "vote_count": 200,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990271,
+        "title": "10 x 10 Grid",
+        "original_title": "10 x 10 Grid",
+        "release_date": "2015-01-01",
+        "popularity": 0.5,
+        "vote_count": 2,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "film_episode_50_vlc_file",
+   "raw": "Episode.50.2011.1080p.WEB-DL.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 990280
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990280,
+        "title": "Episode 50",
+        "original_title": "Episode 50",
+        "release_date": "2011-12-02",
+        "popularity": 3.0,
+        "vote_count": 90,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990281,
+        "name": "Episode",
+        "original_name": "Episode",
+        "first_air_date": "2011-01-09",
+        "popularity": 10.0,
+        "vote_count": 400,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_youtube_skip",
+   "raw": "4K UHD Rainforest Sounds 🌧️ Ambient Film for Sleep (10 Hours)",
+   "type": 4,
+   "iconUri": "https://i.ytimg.com/vi/xyz/hqdefault.jpg",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990200,
+        "title": "Rainforest",
+        "original_title": "Rainforest",
+        "release_date": "2018-01-01",
+        "popularity": 3.0,
+        "vote_count": 40,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990201,
+        "title": "Ambient",
+        "original_title": "Ambient",
+        "release_date": "2015-01-01",
+        "popularity": 0.5,
+        "vote_count": 2,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_youtube_like_unknown_type",
+   "raw": "Drone Flight Over Iceland in 4K UHD 60fps HDR",
+   "type": null,
+   "iconUri": null,
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990210,
+        "title": "Iceland",
+        "original_title": "Iceland",
+        "release_date": "2007-10-10",
+        "popularity": 10.0,
+        "vote_count": 700,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990211,
+        "title": "Drone",
+        "original_title": "Drone",
+        "release_date": "2019-01-01",
+        "popularity": 0.4,
+        "vote_count": 1,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 990212,
+        "name": "Iceland Life",
+        "original_name": "Iceland Life",
+        "first_air_date": "2006-03-05",
+        "popularity": 30.0,
+        "vote_count": 3000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 990213,
+        "name": "Our Planet",
+        "original_name": "Our Planet",
+        "first_air_date": "2019-04-05",
+        "popularity": 20.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_youtube_like_as_movie",
+   "raw": "Gentle Rain and Thunder Sounds for Sleep",
+   "type": 0,
+   "iconUri": "https://example.com/a.jpg",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990220,
+        "title": "Gentle",
+        "original_title": "Gentle",
+        "release_date": "2010-01-01",
+        "popularity": 2.0,
+        "vote_count": 50,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990221,
+        "title": "Thunder",
+        "original_title": "Thunder",
+        "release_date": "2018-01-01",
+        "popularity": 3.0,
+        "vote_count": 40,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990222,
+        "title": "Sleep",
+        "original_title": "Sleep",
+        "release_date": "2020-01-01",
+        "popularity": 4.0,
+        "vote_count": 100,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_solaris_ambiguous_unknown_type",
+   "raw": "Солярис",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 593,
+        "title": "Солярис",
+        "original_title": "Солярис",
+        "release_date": "1972-02-05",
+        "popularity": 2.0,
+        "vote_count": 25,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 2103,
+        "title": "Солярис",
+        "original_title": "Solaris",
+        "release_date": "2002-11-27",
+        "popularity": 20.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990101,
+        "title": "Солярис",
+        "original_title": "Солярис",
+        "release_date": "1968-10-08",
+        "popularity": 6.0,
+        "vote_count": 300,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "tv",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 990102,
+        "name": "Солярис",
+        "original_name": "Solaris",
+        "first_air_date": "2020-01-01",
+        "popularity": 1.0,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_dune_unknown_type_no_year",
+   "raw": "Dune",
+   "type": null,
+   "iconUri": null,
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Dune: Part Two",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 120.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 990010,
+        "name": "Dune",
+        "original_name": "Frank Herbert's Dune",
+        "first_air_date": "2000-12-03",
+        "popularity": 8.0,
+        "vote_count": 300,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 90228,
+        "name": "Dune: Prophecy",
+        "original_name": "Dune: Prophecy",
+        "first_air_date": "2024-11-17",
+        "popularity": 70.0,
+        "vote_count": 700,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_dune_https_card_votes_not_dominant",
+   "raw": "Дюна / Dune",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 5000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 841,
+        "title": "Дюна",
+        "original_title": "Dune",
+        "release_date": "1984-12-14",
+        "popularity": 20.0,
+        "vote_count": 2800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_dune_1984_only_remake_found",
+   "raw": "Dune (1984)",
+   "type": 0,
+   "iconUri": null,
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 438631,
+        "title": "Dune",
+        "original_title": "Dune",
+        "release_date": "2021-09-15",
+        "popularity": 80.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Dune: Part Two",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 120.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_avatar_3_partial_title",
+   "raw": "Avatar 3",
+   "type": 0,
+   "iconUri": null,
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 19995,
+        "title": "Avatar",
+        "original_title": "Avatar",
+        "release_date": "2009-12-15",
+        "popularity": 30.5,
+        "vote_count": 32000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 76600,
+        "title": "Avatar: The Way of Water",
+        "original_title": "Avatar: The Way of Water",
+        "release_date": "2022-12-14",
+        "popularity": 60.0,
+        "vote_count": 12000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 83533,
+        "title": "Avatar: Fire and Ash",
+        "original_title": "Avatar: Fire and Ash",
+        "release_date": "2025-12-17",
+        "popularity": 90.0,
+        "vote_count": 900,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_series_only_movies_found",
+   "raw": "Fargo",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990062,
+        "title": "Fargo Diaries",
+        "original_title": "Fargo Diaries",
+        "release_date": "2012-05-25",
+        "popularity": 15.0,
+        "vote_count": 1800,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990061,
+        "title": "Fargo: Abyss",
+        "original_title": "Фарго",
+        "release_date": "2021-04-15",
+        "popularity": 12.0,
+        "vote_count": 500,
+        "vote_average": 7.0,
+        "original_language": "ru",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_series_title_only_franchise",
+   "raw": "Avatar",
+   "type": 3,
+   "iconUri": "http://192.168.1.20:8096/Items/abc/Images/Primary",
+   "expect": null,
+   "responses": [
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 246,
+        "name": "Avatar: The Last Airbender",
+        "original_name": "Avatar: The Last Airbender",
+        "first_air_date": "2005-02-21",
+        "popularity": 50.0,
+        "vote_count": 4000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "id": 33880,
+        "name": "The Legend of Korra",
+        "original_name": "The Legend of Korra",
+        "first_air_date": "2012-04-14",
+        "popularity": 40.0,
+        "vote_count": 2000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_home_video_file",
+   "raw": "Family.Holiday.2015.1080p.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990230,
+        "title": "Holiday",
+        "original_title": "Holiday",
+        "release_date": "2015-01-01",
+        "popularity": 1.0,
+        "vote_count": 20,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990231,
+        "title": "The Family",
+        "original_title": "The Family",
+        "release_date": "2013-09-13",
+        "popularity": 20.0,
+        "vote_count": 3000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "id": 990232,
+        "name": "Family Holiday",
+        "original_name": "Family Holiday",
+        "first_air_date": "2019-01-01",
+        "popularity": 0.5,
+        "vote_count": 4,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_popularity_cannot_lift",
+   "raw": "Moonfall Origins",
+   "type": 0,
+   "iconUri": null,
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 406759,
+        "title": "Moonfall",
+        "original_title": "Moonfall",
+        "release_date": "2022-02-03",
+        "popularity": 500.0,
+        "vote_count": 40000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990240,
+        "title": "Origins",
+        "original_title": "Origins",
+        "release_date": "2014-01-01",
+        "popularity": 2.0,
+        "vote_count": 30,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_wonder_woman_1984_vlc_file_only_old_series",
+   "raw": "Wonder.Woman.1984.1080p.WEB-DL.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 297762,
+        "title": "Wonder Woman",
+        "original_title": "Wonder Woman",
+        "release_date": "2017-05-30",
+        "popularity": 60.0,
+        "vote_count": 18000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990250,
+        "name": "Wonder Woman",
+        "original_name": "Wonder Woman",
+        "first_air_date": "1975-11-07",
+        "popularity": 15.0,
+        "vote_count": 150,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+     }
+    }
+   ]
+  }
+ ]
+}

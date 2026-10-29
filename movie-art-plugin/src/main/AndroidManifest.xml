@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Movie Art Details. namespace and applicationId are set in Gradle: io.github.yozha.movieartdetails. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="MissingLeanbackLauncher">
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Network only: api.themoviedb.org and image.tmdb.org. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature
@@ -10,80 +11,83 @@
         android:required="false" />
     <uses-feature
         android:name="android.software.leanback"
-        android:required="true" />
+        android:required="false" />
 
+    <!-- Projectivy package visibility, needed for grantUriPermission and the WALLPAPER_PROVIDER_UPDATED broadcast. -->
+    <queries>
+        <package android:name="com.spocky.projengmenu" />
+    </queries>
+
+    <!-- Backup rules (settings only) exclude the key, title history and cache. -->
     <application
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="@string/plugin_name"
-        android:supportsRtl="true"
         android:icon="@mipmap/ic_launcher"
-        android:banner="@mipmap/ic_banner"
-        android:theme="@style/Theme.ProjectivyWallpaperProvider">
+        android:banner="@drawable/ic_banner"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MovieArtDetails"
+        tools:targetApi="31">
+
+        <!-- Exposes only the published composites directory, files/published/, to the host. -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="${applicationId}.files"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Projectivy resolves settingsActivity=".settings.SettingsActivity" against applicationId:
+             io.github.yozha.movieartdetails.settings.SettingsActivity, which matches the name below (namespace == applicationId). -->
         <activity
-            android:name=".SettingsActivity"
+            android:name=".settings.SettingsActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
-
         </activity>
 
+        <!-- Bound only by Projectivy over AIDL; the host API defines no permission for binding. -->
         <service
-            android:name=".WallpaperProviderService"
+            android:name=".core.WallpaperProviderService"
             android:exported="true"
             android:label="@string/plugin_name"
             android:icon="@mipmap/ic_launcher"
-            android:banner="@mipmap/ic_banner"
+            android:banner="@drawable/ic_banner"
             tools:ignore="ExportedService">
 
-            <!-- Mandatory for the plugin to be detected, DO NOT CHANGE -->
             <intent-filter>
-                <action android:name="tv.projectivy.plugin.WALLPAPER_PROVIDER"/>
+                <action android:name="tv.projectivy.plugin.WALLPAPER_PROVIDER" />
             </intent-filter>
 
-            <!-- Api version this plugin is compatible with -->
             <meta-data
                 android:name="apiVersion"
-                android:value="1"/>
-
-            <!--Plugin UUID *** YOU NEED TO CHANGE IT *** -->
-            <!--https://www.uuidgenerator.net/version4 -->
+                android:value="1" />
+            <!-- This plugin's own provider UUID (build.gradle.kts → pluginUuid); the broadcast reads it from here as a string. -->
             <meta-data
                 android:name="uuid"
-                android:value="@string/plugin_uuid"/>
-
-            <!-- Plugin name -->
+                android:value="${pluginUuid}" />
             <meta-data
                 android:name="name"
-                android:value="@string/plugin_name"/>
-
-            <!-- Plugin activity called by Projectivy to configure it -->
+                android:value="@string/plugin_name" />
             <meta-data
                 android:name="settingsActivity"
-                android:value=".SettingsActivity"/>
-
-            <!-- How long should Projectivy keep wallpapers before a new request -->
+                android:value=".settings.SettingsActivity" />
+            <!-- 24 h: TIME_ELAPSED is only needed as the reply to the broadcast. -->
             <meta-data
                 android:name="itemsCacheDurationMillis"
-                android:value="@integer/items_cache_duration_millis"/>
-
-            <!-- This plugin will receive CARD_FOCUSED and PROGRAM_CARD_FOCUSED -->
+                android:value="@integer/items_cache_duration_millis" />
+            <!-- 13 = TIME_ELAPSED | CARD_FOCUSED | PROGRAM_CARD_FOCUSED. -->
             <meta-data
                 android:name="updateMode"
-                android:value="12"/>
+                android:value="@integer/update_mode" />
         </service>
 
     </application>

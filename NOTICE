@@ -1,0 +1,29 @@
+Movie Art Details
+A fork of Movie Art for Projectivy (https://github.com/Dak0r/Movie-Art-For-Projectivy-Plugin),
+based on commit 4eab0d37b7a75e4e2fa700ed62def2ea9de35eef.
+
+- Movie Art code: MIT License, Copyright (c) 2026 Daniel Korgel. See LICENSE.
+
+- api/src/, api/build.gradle.kts and api/consumer-rules.pro are taken from
+  spocky/projectivy-plugin-wallpaper-provider (https://github.com/spocky/projectivy-plugin-wallpaper-provider)
+  at commit 60ec7b4306ab16dac83ea10ed9b81f5670b51ee3, Apache License 2.0 (see licenses/APACHE-2.0.txt).
+  api/src/ and api/consumer-rules.pro are unmodified; api/build.gradle.kts has formatting-only changes.
+  api/proguard-rules.pro comes from Movie Art for Projectivy (MIT).
+
+- Portions adapted from rfmarcos/projectivy-plugin-sofadrop
+  (https://github.com/rfmarcos/projectivy-plugin-sofadrop)
+  at commit 0f063c19dcc90b199ece7475429957343f94b139, file app/src/main/java/com/rfmarcos/sofadrop/WallpaperRenderer.kt,
+  Apache License 2.0 (see licenses/APACHE-2.0.txt). The adapted code is in these files:
+  - movie-art-plugin/src/main/java/io/github/yozha/movieartdetails/render/InfoBlockRenderer.kt
+    (center-crop backdrop drawing, alpha-band gradient drawing, smoothstep, and trimming of transparent
+    margins around logos; the changes are described in the file header);
+  - movie-art-plugin/src/main/java/io/github/yozha/movieartdetails/render/ColorMath.kt, function scrimTint
+    (scrim tint formula: near-black plus 10% of the frame's average color).
+
+- Roboto font: Apache License 2.0. See licenses/fonts/.
+
+- Data and images: TMDB (https://www.themoviedb.org). This application uses TMDB and the TMDB APIs but
+  is not endorsed, certified, or otherwise approved by TMDB. The TMDB logo is a trademark of TMDB;
+  see licenses/TMDB-LOGO.md.
+
+- Dependencies (OkHttp, AndroidX, kotlinx.serialization): Apache License 2.0.

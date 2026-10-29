@@ -1,6 +1,9 @@
 <resources>
-
-    <style name="Theme.ProjectivyWallpaperProvider" parent="@style/Theme.Leanback">
+    <!--
+      App theme (manifest: @style/Theme.MovieArtDetails). Settings screens are GuidedStepSupportFragments:
+      without guidedStepThemeFlag, leanback wraps them in Theme.Leanback.GuidedStep itself.
+    -->
+    <style name="Theme.MovieArtDetails" parent="@style/Theme.Leanback">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>

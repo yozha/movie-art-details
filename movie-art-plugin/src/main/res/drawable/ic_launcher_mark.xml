@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plugin mark: a background frame with the info block at the top left and a card row at the bottom. Fits the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Frame. -->
+    <path
+        android:pathData="M32,34H76A4,4 0,0 1,80 38V70A4,4 0,0 1,76 74H32A4,4 0,0 1,28 70V38A4,4 0,0 1,32 34Z"
+        android:strokeWidth="4"
+        android:strokeColor="#E6E8EB"
+        android:fillColor="#00000000" />
+    <!-- Title. -->
+    <path
+        android:pathData="M36,44H57"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeColor="#E6E8EB" />
+    <!-- Meta line and rating. -->
+    <path
+        android:pathData="M36,52H50"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeColor="#9AA3AD" />
+    <path
+        android:pathData="M55,52H63"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeColor="#F2B84B" />
+    <!-- Overview. -->
+    <path
+        android:pathData="M36,58H66"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeColor="#9AA3AD" />
+    <!-- Card row. -->
+    <path
+        android:fillColor="#5C6670"
+        android:pathData="M36,64h9v6h-9z M49,64h9v6h-9z M62,64h9v6h-9z" />
+</vector>

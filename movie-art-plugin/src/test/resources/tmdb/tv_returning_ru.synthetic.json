@@ -1,0 +1,27 @@
+{
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /tv/{id}?language=ru-RU&append_to_response=images,translations,external_ids). Not a recorded response; ids, texts and file paths are invented.",
+  "backdrop_path": null,
+  "first_air_date": "2022-06-23",
+  "genres": [{"id": 18, "name": "драма"}],
+  "id": 136315,
+  "last_air_date": "2026-04-16",
+  "name": "Медведь",
+  "number_of_seasons": 2,
+  "original_language": "en",
+  "original_name": "The Bear",
+  "overview": "",
+  "status": "Returning Series",
+  "vote_average": 8.25,
+  "vote_count": 9,
+  "images": {"backdrops": [], "logos": [
+    {"height": 300, "iso_639_1": "en", "file_path": "/synthBearLogoEn.png", "vote_average": 0, "width": 900}
+  ]},
+  "translations": {
+    "translations": [
+      {"iso_3166_1": "US", "iso_639_1": "en", "data": {"name": "The Bear", "overview": "Synthetic overview: a young chef comes home to run the family sandwich shop.", "homepage": "", "tagline": ""}},
+      {"iso_3166_1": "RU", "iso_639_1": "ru", "data": {"name": "Медведь", "overview": "", "homepage": "", "tagline": ""}},
+      {"iso_3166_1": "UA", "iso_639_1": "uk", "data": {"name": "Ведмідь", "overview": "Synthetic uk-UA overview for The Bear.", "homepage": "", "tagline": ""}}
+    ]
+  },
+  "external_ids": {"imdb_id": null}
+}

@@ -1,0 +1,9 @@
+{
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /search/tv). Not a recorded response.",
+  "page": 1,
+  "results": [
+    {"id": 136315, "name": "Ведмідь", "original_name": "The Bear", "original_language": "en", "first_air_date": "2022-06-23", "popularity": 55.0, "vote_count": 9, "origin_country": ["US"]}
+  ],
+  "total_pages": 1,
+  "total_results": 1
+}

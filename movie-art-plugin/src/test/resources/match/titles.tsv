@@ -1,0 +1,83 @@
+# Title parsing and source classification fixtures. TAB-separated columns:
+# raw | type (empty = null) | iconUri (empty = null) | expected CardKind | expected primary (* = not checked) | year | season | episode | script (empty = not checked)
+# Empty year/season/episode mean an expected null. The first rows are modeled on typical launcher cards.
+Аватар / Avatar	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Аватар				CYRILLIC_AMBIGUOUS
+Alfred Hitchcock's Rear Window 1954 1080p BluRay REMUX AVC FLAC 2.0 - SOMEGROUP	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Alfred Hitchcock's Rear Window	1954			LATIN
+4K UHD Rainforest Sounds 🌧️ Ambient Film for Sleep (10 Hours)	4	https://i.ytimg.com/vi/xyz/hqdefault.jpg	SKIP	*				
+Drone Flight Over Iceland in 4K UHD	4	https://i.ytimg.com/vi/xyz/hqdefault.jpg	SKIP	Drone Flight Over Iceland in				
+Up	0	http://192.168.1.20:8096/Items/abc/Images/Primary	MOVIE	Up				LATIN
+Gravity Falls	3	http://192.168.1.20:8096/Items/abc/Images/Primary	SERIES	Gravity Falls				LATIN
+Fargo	3	http://192.168.1.20:8096/Items/abc/Images/Primary	SERIES	Fargo				LATIN
+Солярис	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Солярис				CYRILLIC_AMBIGUOUS
+Ведмідь / The Bear	3	http://192.168.1.20:8096/Items/abc/Images/Primary	SERIES	Ведмідь				CYRILLIC_UK
+1917	0	https://cdn.example.com/poster/a1.jpg	MOVIE	1917				NONE
+1917 (2019)	0	https://cdn.example.com/poster/a1.jpg	MOVIE	1917	2019			NONE
+Dune (1984)	0		MOVIE	Dune	1984			LATIN
+Dune (2021)	0		MOVIE	Dune	2021			LATIN
+Дюна / Dune	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Дюна				CYRILLIC_AMBIGUOUS
+Солярис - Solaris	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Солярис				CYRILLIC_AMBIGUOUS
+[YTS.MX] Solaris (1972) [1080p] [BluRay] [5.1]	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Solaris	1972			LATIN
+The.Bear.S01E02.7.00.P.M.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	The Bear		1	2	LATIN
+Fargo.S01E05.The.Six.Ungraspables.2160p.HDR.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Fargo		1	5	LATIN
+Avatar.The.Last.Airbender.S01E01.The.Boy.in.the.Iceberg.1080p.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Avatar The Last Airbender		1	1	LATIN
+Breaking Bad 1x02 Cat's in the Bag			UNKNOWN	Breaking Bad		1	2	LATIN
+Gravity Falls Season 2	3	http://192.168.1.20:8096/Items/abc/Images/Primary	SERIES	Gravity Falls		2		
+Шерлок 2 сезон	1		SERIES	Шерлок		2		CYRILLIC_AMBIGUOUS
+Fargo (2014) S01E01 12:34:56	3	http://192.168.1.20:8096/Items/abc/Images/Primary	SERIES	Fargo	2014	1	1	
+Severance S02	1		SERIES	Severance		2		
+2001: A Space Odyssey	0		MOVIE	2001: A Space Odyssey				LATIN
+2001: A Space Odyssey (1968)	0		MOVIE	2001: A Space Odyssey	1968			
+9 1/2 Weeks	0		MOVIE	9 1/2 Weeks				
+(500) Days of Summer	0		MOVIE	(500) Days of Summer				
+(500) Days of Summer (2009)	0		MOVIE	(500) Days of Summer	2009			
+Blade Runner 2049	0		MOVIE	Blade Runner 2049				
+Blade.Runner.2049.2017.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-EPSiLON.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Blade Runner 2049	2017			
+Space: 1999	1		SERIES	Space: 1999				
+Wonder Woman 1984	0		MOVIE	Wonder Woman	1984			
+Дюна 2	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Дюна 2				CYRILLIC_AMBIGUOUS
+The.Matrix.1999.1080p.BluRay.x264-SPARKS.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	The Matrix	1999			
+Interstellar 2014 1080p BluRay x264	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Interstellar	2014			
+Dune.2021.2160p.WEB-DL.DDP5.1.Atmos.HDR.HEVC-GROUP.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Dune	2021			
+Dune.Part.Two.2024.2160p.WEB-DL.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Dune Part Two	2024			
+Movie.Name.2010.Rus.Eng.1080p.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Movie Name	2010			
+Charlotte's Web 2006 WEB 1080p	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Charlotte's Web	2006			
+Up.2009.720p.BluRay.x264.mkv	0	content://org.videolan.vlc.thumbprovider/thumb/1	MOVIE	Up	2009			
+Матрица [tmdbid-603]			UNKNOWN	Матрица				CYRILLIC_AMBIGUOUS
+Movie Name (2010) [imdbid-tt1234567]	0		MOVIE	Movie Name	2010			
+Some Film {imdb-tt7654321} 2012			UNKNOWN	Some Film	2012			
+Аватар: Путь воды / Avatar: The Way of Water	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Аватар: Путь воды				CYRILLIC_RU
+Avatar: The Way of Water (2022)	0		MOVIE	Avatar: The Way of Water	2022			LATIN
+Чёрный лебедь	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Чёрный лебедь				CYRILLIC_RU
+Історія іграшок / Toy Story	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Історія іграшок				CYRILLIC_UK
+Володар перснів. Хранителі персня	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Володар перснів. Хранителі персня				CYRILLIC_UK
+Интерстеллар (2014)	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Интерстеллар	2014			CYRILLIC_AMBIGUOUS
+Ocean’s Eleven	0		MOVIE	Ocean's Eleven				LATIN
+Spider–Man: Into the Spider—Verse	0		MOVIE	Spider-Man: Into the Spider-Verse				
+Mission: Impossible - Fallout	0		MOVIE	Mission: Impossible - Fallout				
+Severance | Разделение	1		SERIES	Severance				LATIN
+Леон / Léon	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Леон				CYRILLIC_AMBIGUOUS
+«Солярис»	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Солярис				CYRILLIC_AMBIGUOUS
+Up			UNKNOWN	Up				
+Up	108		MOVIE	Up				
+Fargo	109		SERIES	Fargo				
+Fargo	118		SERIES	Fargo				
+Some Song	101		SKIP	Some Song				
+Some Video	106		SKIP	Some Video				
+Some Video	106	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Some Video				
+News Channel	6		SKIP	News Channel				
+Radio Station	10		SKIP	Radio Station				
+Some Game	12		SKIP	Some Game				
+Cooking Video	4	https://yt3.ggpht.com/abc=s88	SKIP	Cooking Video				
+Movie Trailer	4	https://example.com/thumb.jpg	SKIP	Movie Trailer				
+Trailer	5		SKIP	Trailer				
+Up	0	https://i.ytimg.com/vi/a/hq.jpg	SKIP	Up				
+Audio track	8	content://org.videolan.vlc.thumbprovider/thumb/1	SKIP	Audio track				
+Fargo	3	http://jellyfin.local:8096/x	SERIES	Fargo				
+Wonder.Woman.1984.1080p.WEB-DL.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Wonder Woman	1984			LATIN
+Wonder.Woman.1984.2020.1080p.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Wonder Woman 1984	2020			LATIN
+Звёздные войны: Эпизод 4 – Новая надежда / Star Wars	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Звёздные войны: Эпизод 4 - Новая надежда				CYRILLIC_RU
+Звёздные войны: Эпизод 4 – Новая надежда	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Звёздные войны			4	CYRILLIC_RU
+Сезон охоты 2 / Open Season 2	0	https://cdn.example.com/poster/a1.jpg	MOVIE	Сезон охоты 2				CYRILLIC_RU
+10x10	0	http://192.168.1.20:8096/Items/abc/Images/Primary	MOVIE	10x10				LATIN
+Episode 50	0		MOVIE	Episode 50				LATIN
+Episode.50.2011.1080p.WEB-DL.mkv	4	content://org.videolan.vlc.thumbprovider/thumb/1	UNKNOWN	Episode 50	2011			LATIN

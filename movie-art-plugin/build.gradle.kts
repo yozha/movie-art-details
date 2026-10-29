@@ -1,69 +1,9 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
-import com.android.build.api.dsl.ApplicationExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization") version "1.9.0" // Use the latest version of Kotlin
-}
-
-configure<ApplicationExtension> {
-    namespace = "com.danielkorgel.projectivy.plugin.cinemaglow"
-    compileSdk = 36
-
-    buildFeatures {
-        buildConfig = true
-    }
-
-    defaultConfig {
-        applicationId = "com.danielkorgel.projectivy.plugin.cinemaglow"
-        minSdk = 26
-        targetSdk = 36
-        versionCode = 2
-        versionName = "1.02"
-
-        vectorDrawables.useSupportLibrary = true
-
-        // Load the API key from the apikeys.properties file
-        val apiKeysFile = file("apikeys.properties")
-        if (apiKeysFile.exists()) {
-            val properties = Properties()
-            apiKeysFile.inputStream().use { properties.load(it) }
-
-            // Add the API key as a BuildConfig field
-            val tmdbApiKey = properties["TMDB_API_KEY"] as String
-            buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
-        } else {
-            println("Warning: apikeys.properties file not found!")
-        }
-
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = file("../cinemaglow.jks")
-            storePassword = "cY2tMwY4M0W8GF839MD7"
-            keyAlias = "cinemaglow"
-            keyPassword = "cY2tMwY4M0W8GF839MD7"
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -72,15 +12,74 @@ kotlin {
     }
 }
 
+// Local, git-ignored settings (keystore.properties in the repository root):
+// storeFile, storePassword, keyAlias, keyPassword: release signing for this fork.
+// devTmdbKey: developer TMDB key, compiled into debug builds only.
+val local = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+android {
+    namespace = "io.github.yozha.movieartdetails"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        // namespace == applicationId: Projectivy resolves the relative ".settings.SettingsActivity" against applicationId.
+        applicationId = "io.github.yozha.movieartdetails"
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = 1
+        versionName = "0.1.0"
+        manifestPlaceholders["pluginUuid"] = "db54f357-de39-4d1d-90e2-53a590c89a76"
+        buildConfigField("String", "DEV_TMDB_KEY", "\"\"")
+    }
+
+    signingConfigs {
+        local.getProperty("storeFile")?.let { path ->
+            create("release") {
+                storeFile = rootProject.file(path)
+                storePassword = local.getProperty("storePassword")
+                keyAlias = local.getProperty("keyAlias")
+                keyPassword = local.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField("String", "DEV_TMDB_KEY", "\"${local.getProperty("devTmdbKey", "")}\"")
+        }
+        release {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.findByName("release")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
 dependencies {
-    implementation("androidx.core:core-ktx:1.18.0")
-    implementation("androidx.leanback:leanback:1.2.0")
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("com.google.code.gson:gson:2.13.2")
     implementation(project(":api"))
-    implementation("com.squareup.okhttp3:okhttp:5.3.2") // For HTTP requests
-    implementation("com.google.code.gson:gson:2.13.2") // JSON Parsing
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.annotation)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment)
+    implementation(libs.androidx.leanback)
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
 }

@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="items_cache_duration_millis">3600000</integer>
-    <integer name="update_mode_time_elapsed">1</integer>
-    <integer name="update_mode_now_playing_changed">2</integer>
-    <integer name="update_mode_card_focused">4</integer>
-    <integer name="update_mode_program_card_focused">8</integer>
-    <integer name="update_mode_launcher_idle_mode_changed">16</integer>
+    <!-- Interval after which the host sends TIME_ELAPSED on its own (24 hours). -->
+    <integer name="items_cache_duration_millis">86400000</integer>
+    <!-- TIME_ELAPSED(1) | CARD_FOCUSED(4) | PROGRAM_CARD_FOCUSED(8). LAUNCHER_IDLE_MODE_CHANGED is not subscribed to. -->
+    <integer name="update_mode">13</integer>
 </resources>

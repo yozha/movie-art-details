@@ -1,0 +1,10 @@
+{
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /find/{external_id}?external_source=imdb_id). Not a recorded response.",
+  "movie_results": [
+    {"id": 19995, "title": "Avatar", "original_title": "Avatar", "original_language": "en", "release_date": "2009-12-15", "popularity": 120.5, "vote_count": 31250, "media_type": "movie"}
+  ],
+  "person_results": [],
+  "tv_results": [],
+  "tv_episode_results": [],
+  "tv_season_results": []
+}

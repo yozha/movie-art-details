@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The host can access only the published composites directory in internal storage. -->
 <paths>
-    <external-cache-path name="external_cache" path="." />
+    <files-path name="published" path="published/" />
 </paths>

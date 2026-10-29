@@ -1,0 +1,42 @@
+{
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /tv/{id}?language=ru-RU&append_to_response=images,translations,external_ids). Not a recorded response; texts and file paths are invented.",
+  "backdrop_path": "/synthGotRuText.jpg",
+  "first_air_date": "2011-04-17",
+  "genres": [
+    {"id": 10765, "name": "Sci-Fi & Fantasy"},
+    {"id": 18, "name": "драма"},
+    {"id": 10759, "name": "боевик и Приключения"}
+  ],
+  "id": 1399,
+  "in_production": false,
+  "last_air_date": "2019-05-19",
+  "name": "Игра престолов",
+  "number_of_episodes": 73,
+  "number_of_seasons": 8,
+  "original_language": "en",
+  "original_name": "Game of Thrones",
+  "overview": "Synthetic ru-RU overview for Game of Thrones.",
+  "status": "Ended",
+  "type": "Scripted",
+  "vote_average": 8.456,
+  "vote_count": 24000,
+  "images": {
+    "backdrops": [
+      {"height": 1080, "iso_639_1": "ru", "file_path": "/synthGotRuText.jpg", "vote_average": 5.6, "width": 1920},
+      {"height": 720, "iso_639_1": null, "file_path": "/synthGotSmall.jpg", "vote_average": 5.9, "width": 1280},
+      {"height": 1080, "iso_639_1": null, "file_path": "/synthGotLow.jpg", "vote_average": 5.1, "width": 1920},
+      {"height": 1080, "iso_639_1": null, "file_path": "/synthGotHigh.jpg", "vote_average": 5.7, "width": 1920}
+    ],
+    "logos": [
+      {"height": 200, "iso_639_1": "en", "file_path": "/synthGotLogoEn.png", "vote_average": 5.3, "width": 1000}
+    ]
+  },
+  "translations": {
+    "translations": [
+      {"iso_3166_1": "RU", "iso_639_1": "ru", "data": {"name": "Игра престолов", "overview": "Synthetic ru-RU overview for Game of Thrones.", "homepage": "", "tagline": ""}},
+      {"iso_3166_1": "UA", "iso_639_1": "uk", "data": {"name": "Гра престолів", "overview": "Synthetic uk-UA overview for Game of Thrones.", "homepage": "", "tagline": ""}},
+      {"iso_3166_1": "US", "iso_639_1": "en", "data": {"name": "Game of Thrones", "overview": "Synthetic overview about a struggle for the throne.", "homepage": "", "tagline": ""}}
+    ]
+  },
+  "external_ids": {"imdb_id": "tt0944947", "tvdb_id": 121361}
+}

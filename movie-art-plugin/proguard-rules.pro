@@ -1,26 +1,26 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Movie Art Details: R8 rules for release builds.
+# The api/ contract (Wallpaper, Event) is kept by the api module's consumer rules.
+# The Service, Activity and FileProvider declared in the manifest are kept by AAPT. OkHttp and
+# kotlinx.serialization ship their own rules in their jars (META-INF/proguard, META-INF/com.android.tools).
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Line numbers in stack traces, without original source file names.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# kotlinx.serialization: serializers of the app's own DTOs (tmdb/, cache/, settings/), including private ones.
+-keepattributes *Annotation*, InnerClasses
+-keepclassmembers @kotlinx.serialization.Serializable class io.github.yozha.movieartdetails.** {
+    *** Companion;
+    *** INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers class io.github.yozha.movieartdetails.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-
--keepclassmembers,allowobfuscation class * {
-    @com.google.gson.annotations.SerializedName <fields>;
+# Verbose, debug and info logging is not needed in release builds: these android.util.Log calls are stripped.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup and device-transfer rules for API 31+ (android:dataExtractionRules).
+  Same as backup_rules.xml: only shared_prefs/settings.xml (appearance and language, no key or history).
+  The TMDB key, manual corrections and title history live in noBackupFilesDir and are not copied;
+  diagnostic flags (settings_local.xml), composites, the log and the cache are not copied either.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="settings.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="settings.xml" />
+    </device-transfer>
+</data-extraction-rules>

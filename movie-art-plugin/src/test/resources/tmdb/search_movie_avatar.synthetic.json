@@ -1,0 +1,12 @@
+{
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /search/movie). Not a recorded response.",
+  "page": 1,
+  "results": [
+    {"adult": false, "backdrop_path": "/synthAvatarMain.jpg", "genre_ids": [28, 12], "id": 19995, "original_language": "en", "original_title": "Avatar", "overview": "...", "popularity": 120.5, "poster_path": "/p1.jpg", "release_date": "2009-12-15", "title": "Аватар", "video": false, "vote_average": 7.588, "vote_count": 31250},
+    {"adult": false, "id": 76600, "original_language": "en", "original_title": "Avatar: The Way of Water", "popularity": 90.1, "release_date": "2022-12-14", "title": "Аватар: Путь воды", "vote_average": 7.6, "vote_count": 12000},
+    {"adult": false, "id": 900001, "original_language": "en", "original_title": "Avatar: Synthetic Short", "popularity": 0.6, "release_date": "", "title": "", "vote_average": 0, "vote_count": 0},
+    {"adult": false, "id": 0, "title": "broken row without id"}
+  ],
+  "total_pages": 1,
+  "total_results": 4
+}

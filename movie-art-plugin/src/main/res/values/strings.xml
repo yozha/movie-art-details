@@ -1,21 +1,189 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="plugin_name">Movie Art for Projectivy</string>
-    <string name="plugin_description">
-        Setup:\nEnable in Projectivy Launcher Settings ➞ Appearance ➞ Wallpaper ➞ Movie Art for Projectivy.\nMovie and TV Show background art is fetched from TheMovieDB.org.
-    </string>
-    <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Plugin name. The provider UUID is set in build.gradle.kts (pluginUuid). -->
+    <string name="plugin_name">Movie Art Details</string>
 
-    <!-- Setting parameters -->
-    <string name="settings">Settings</string>
-    <string name="setting_projectivy_title">Not using Projectivy, yet?</string>
-    <string name="setting_projectivy_description">Get Projectivy (Pro) from the PlayStore.</string>
-    <string name="setting_about_title">This plugin is Open Source</string>
-    <string name="setting_about_description">Browse on GitHub.</string>
+    <!-- Common -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_root_description">Shows the backdrop, title, description, and TMDB rating of the focused movie or series.\nTo use it, go to Projectivy Settings → Appearance → Wallpaper.</string>
+    <string name="loading">Loading…</string>
+    <string name="state_on">On</string>
+    <string name="state_off">Off</string>
+    <string name="count_format">Items: %1$d</string>
+    <string name="percent_format">%1$d%%</string>
+    <string name="type_movie">Movie</string>
+    <string name="type_tv">Series</string>
+    <string name="error_not_found">Not found on TMDB</string>
+    <string name="error_bad_request">TMDB rejected the request</string>
 
-    <!-- Custom App Background Settings -->
-    <string name="setting_fallback_bg_title">Fallback Background</string>
-    <string name="setting_fallback_bg_description">For cards that are not a movie or show\nᐅ %1$s</string>
-    <string name="setting_fallback_bg_pick_gallery_title">Set custom Fallback Background</string>
-    <string name="setting_fallback_bg_pick_gallery_description">Select an image or video from your device.\nRequires a Gallery or File Explorer app.</string>
-    <string name="fallback_bg_set_success">Custom background set successfully!\nNote: Videos might load slow on first start.</string>
+    <!-- TMDB key -->
+    <string name="key_title">TMDB API key</string>
+    <string name="key_description">A free TMDB API key (v3): 32 characters, 0–9 and a–f. Get one at themoviedb.org → Settings → API. The key is stored encrypted on this device only and is never exported or logged.</string>
+    <string name="key_current">Current key</string>
+    <string name="key_not_set">Not set</string>
+    <string name="key_enter">Enter key</string>
+    <string name="key_enter_hint">32 characters, 0–9 and a–f. Leading and trailing spaces are ignored.</string>
+    <string name="key_format_error">Invalid format. A v3 API key has 32 characters, 0–9 and a–f. API Read Access Tokens aren\'t supported.</string>
+    <string name="key_validate">Check key</string>
+    <string name="key_delete">Delete key</string>
+    <string name="key_deleted">Key deleted</string>
+    <string name="key_status_checking">Checking…</string>
+    <string name="key_status_valid">Key is valid</string>
+    <string name="key_status_invalid">Invalid key</string>
+    <string name="key_status_suspended">Key suspended by TMDB</string>
+    <string name="key_status_no_connection">Can\'t reach TMDB. Try again later.</string>
+    <string name="key_status_missing">No key set</string>
+    <string name="key_status_save_failed">Couldn\'t save the key</string>
+
+    <!-- TMDB data language. Language names are shown as endonyms. -->
+    <string name="language_title">Language</string>
+    <string name="language_description">Language for titles, descriptions, and genres. If a translation is missing, English is used; if there\'s no English text either, the field is hidden.</string>
+    <string name="language_system">System default</string>
+    <string name="language_system_hint">Uses the system language if supported; otherwise English</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_uk">Українська</string>
+    <string name="language_en">English</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_summary">Text size, position, fields, preview</string>
+    <string name="appearance_description">Values are limited so the info block never covers the clock (top right) or the card row (bottom half).</string>
+    <string name="appearance_preset">Text size</string>
+    <string name="preset_small">Small</string>
+    <string name="preset_medium">Medium</string>
+    <string name="preset_large">Large</string>
+    <string name="appearance_left">Left margin</string>
+    <string name="appearance_top">Top margin</string>
+    <string name="appearance_width">Block width</string>
+    <string name="appearance_bottom">Bottom edge limit</string>
+    <string name="appearance_overview_lines">Description lines</string>
+    <string name="appearance_scrim">Background dimming</string>
+    <string name="appearance_neutral">Neutral background</string>
+    <string name="appearance_tint_from_card">Tint with app color</string>
+    <string name="appearance_tint_from_card_hint">For app cards, tint the neutral background with the app\'s color</string>
+    <string name="neutral_graphite">Graphite</string>
+    <string name="neutral_black">Black</string>
+    <string name="neutral_navy">Navy</string>
+    <string name="neutral_gray">Dark gray</string>
+    <string name="appearance_min_votes">Minimum votes to show rating</string>
+    <string name="appearance_min_votes_any">No minimum</string>
+    <string name="field_logo">Logo</string>
+    <string name="field_year">Year</string>
+    <string name="field_type">Type (movie or series)</string>
+    <string name="field_duration">Runtime</string>
+    <string name="field_duration_hint">From TMDB; may differ from the version you\'re watching</string>
+    <string name="field_genres">Genres</string>
+    <string name="field_rating">TMDB rating</string>
+    <string name="field_overview">Description</string>
+    <string name="field_overview_hint">Turn off if Projectivy\'s bottom panel already shows the description</string>
+    <string name="appearance_reset">Reset appearance</string>
+    <string name="appearance_reset_hint">Your key, corrections, and language are kept</string>
+    <string name="appearance_reset_done">Appearance reset</string>
+
+    <!-- Preview -->
+    <string name="preview_title">Preview</string>
+    <string name="preview_summary">1280×720 preview with the current settings</string>
+    <string name="preview_failed">Couldn\'t render the preview</string>
+    <string name="preview_hint">Press Back to return</string>
+    <string name="preview_sample_title">Sample Movie</string>
+    <string name="preview_sample_type">Movie</string>
+    <string name="preview_sample_duration">2h 19m</string>
+    <string name="preview_sample_genres">Adventure|Drama|Science Fiction</string>
+    <string name="preview_sample_rating">TMDB 7.8/10</string>
+    <string name="preview_sample_overview">A sample description for checking the layout. It\'s long enough to span several lines, so you can see how it wraps and where it gets cut off with an ellipsis at the selected line count. The real description comes from TMDB in your chosen language.</string>
+
+    <!-- Recognition -->
+    <string name="recognition_title">Recognition</string>
+    <string name="recognition_summary">Manual corrections, title history</string>
+    <string name="recognition_description">If a card was matched to the wrong title, pick the right one from your recent cards or mark it as “Don\'t recognize.”</string>
+    <string name="recent_title">Recent titles</string>
+    <string name="recent_description">Card titles from the last 30 days (up to 50). Stored only on this device.</string>
+    <string name="recent_empty">No titles yet</string>
+    <string name="recent_empty_hint">Focus a movie or series card on the Projectivy home screen</string>
+    <string name="recent_has_mapping">Corrected</string>
+    <string name="recent_clear">Clear title history</string>
+    <string name="recent_clear_hint">Corrections are kept</string>
+    <string name="recent_cleared">History cleared</string>
+    <string name="candidates_description">Choose the correct title. The correction applies to all cards with the same key.</string>
+    <string name="candidates_key">Correction key</string>
+    <string name="candidates_same_key">Other recent titles with this key</string>
+    <string name="candidates_same_key_none">None</string>
+    <string name="candidates_current">Current correction</string>
+    <string name="candidates_current_none">None (automatic recognition)</string>
+    <string name="candidates_searching">Searching TMDB…</string>
+    <string name="candidates_none">No results</string>
+    <string name="candidates_error">Search failed</string>
+    <string name="candidates_score_format">%1$d%% match</string>
+    <string name="candidates_checking">Checking…</string>
+    <string name="candidates_tmdb_movie">Enter TMDB movie ID</string>
+    <string name="candidates_tmdb_tv">Enter TMDB series ID</string>
+    <string name="candidates_tmdb_hint">The number in the page URL, e.g. themoviedb.org/movie/123</string>
+    <string name="candidates_tmdb_invalid">Enter a positive number</string>
+    <string name="candidates_imdb">Enter IMDb ID</string>
+    <string name="candidates_imdb_hint">For example, tt0499549</string>
+    <string name="candidates_imdb_invalid">An IMDb ID is “tt” followed by 5–10 digits</string>
+    <string name="candidates_ignore">Don\'t recognize this title</string>
+    <string name="candidates_ignore_hint">Shows a neutral background with no details</string>
+    <string name="candidates_reset">Remove correction</string>
+    <string name="candidates_reset_done">Correction removed</string>
+    <string name="confirm_title">Save correction?</string>
+    <string name="confirm_description">“%1$s” → %2$s</string>
+    <string name="confirm_save">Save</string>
+    <string name="confirm_cancel">Cancel</string>
+    <string name="confirm_failed">Couldn\'t save</string>
+    <string name="mappings_title">Corrections</string>
+    <string name="mappings_description">Your saved manual corrections. They never expire.</string>
+    <string name="mappings_empty">No corrections yet</string>
+    <string name="mappings_delete">Delete</string>
+    <string name="mapping_target_format">%1$s, TMDB %2$d</string>
+    <string name="mapping_ignored">Don\'t recognize</string>
+
+    <!-- Cache -->
+    <string name="cache_title">Cache</string>
+    <string name="cache_summary">Storage used, size limit, clear cache</string>
+    <string name="cache_description">Downloaded data and rendered backgrounds for this plugin. The original Movie Art plugin isn\'t affected.</string>
+    <string name="cache_size">Storage used</string>
+    <string name="cache_size_format">Data and images: %1$s\nRendered backgrounds: %2$s</string>
+    <string name="cache_size_unknown">Unknown</string>
+    <string name="cache_limit">Size limit</string>
+    <string name="cache_clear">Clear cache</string>
+    <string name="cache_clear_hint">Your key, settings, and corrections are kept</string>
+    <string name="cache_clearing">Clearing…</string>
+    <string name="cache_cleared">Cache cleared</string>
+    <string name="cache_clear_failed">Couldn\'t clear the cache</string>
+
+    <!-- Diagnostics -->
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_description">A short log of the last 50 events, for troubleshooting. It never includes your key or request URLs.</string>
+    <string name="diagnostics_enable">Diagnostic log</string>
+    <string name="diagnostics_titles">Include card titles</string>
+    <string name="diagnostics_titles_hint">Off by default, since titles can be personal data</string>
+    <string name="diagnostics_titles_needs_log">Turn on the diagnostic log first</string>
+    <string name="diagnostics_refresh">Refresh</string>
+    <string name="diagnostics_empty">The log is empty</string>
+    <string name="diagnostics_last_error">Last TMDB error</string>
+    <string name="diagnostics_last_error_none">None</string>
+    <string name="diagnostics_clear">Clear log</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_summary">TMDB, licenses</string>
+    <string name="about_version_format">Version %1$s. A fork of Movie Art for Projectivy, not affiliated with or endorsed by the author of Movie Art.</string>
+    <string name="tmdb_name" translatable="false">TMDB</string>
+    <!-- TMDB API Terms of Use notice: verbatim, never altered. tmdb_notice_translation is an optional localized copy shown below it; empty by default. -->
+    <string name="tmdb_notice" translatable="false">This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</string>
+    <string name="tmdb_notice_translation" />
+    <string name="tmdb_url" translatable="false">https://www.themoviedb.org</string>
+    <string name="credit_movie_art_title" translatable="false">Movie Art for Projectivy</string>
+    <string name="credit_movie_art">MIT License, Copyright (c) 2026 Daniel Korgel. github.com/Dak0r/Movie-Art-For-Projectivy-Plugin</string>
+    <string name="credit_api_title" translatable="false">Projectivy Wallpaper Provider API</string>
+    <string name="credit_api">Apache License 2.0. github.com/spocky/projectivy-plugin-wallpaper-provider</string>
+    <string name="credit_sofadrop_title" translatable="false">Sofadrop</string>
+    <string name="credit_sofadrop">Portions adapted. Apache License 2.0. github.com/rfmarcos/projectivy-plugin-sofadrop</string>
+    <string name="credit_font_title" translatable="false">Roboto</string>
+    <string name="credit_font">Font. Apache License 2.0</string>
+    <string name="credit_libs_title" translatable="false">OkHttp, AndroidX, kotlinx.serialization</string>
+    <string name="credit_libs">Apache License 2.0</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="about_privacy">No analytics, ads, or self-updates. Data comes only from TMDB over HTTPS. Your key and title history stay on this device and are excluded from backups.</string>
 </resources>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android TV banner, 320×180: the same mark, enlarged, on a neutral background. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#1B1F24"
+        android:pathData="M0,0h320v180h-320z" />
+    <!-- Mark center (54,54) → banner center (160,90), scale 2.4. -->
+    <group
+        android:scaleX="2.4"
+        android:scaleY="2.4"
+        android:translateX="30.4"
+        android:translateY="-39.6">
+        <path
+            android:pathData="M32,34H76A4,4 0,0 1,80 38V70A4,4 0,0 1,76 74H32A4,4 0,0 1,28 70V38A4,4 0,0 1,32 34Z"
+            android:strokeWidth="4"
+            android:strokeColor="#E6E8EB"
+            android:fillColor="#00000000" />
+        <path
+            android:pathData="M36,44H57"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:strokeColor="#E6E8EB" />
+        <path
+            android:pathData="M36,52H50"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:strokeColor="#9AA3AD" />
+        <path
+            android:pathData="M55,52H63"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:strokeColor="#F2B84B" />
+        <path
+            android:pathData="M36,58H66"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:strokeColor="#9AA3AD" />
+        <path
+            android:fillColor="#5C6670"
+            android:pathData="M36,64h9v6h-9z M49,64h9v6h-9z M62,64h9v6h-9z" />
+    </group>
+</vector>
