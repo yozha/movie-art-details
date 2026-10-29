@@ -2,6 +2,7 @@ package io.github.yozha.movieartdetails.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.yozha.movieartdetails.BuildConfig
 import io.github.yozha.movieartdetails.model.AppearanceSettings
 import io.github.yozha.movieartdetails.model.BlockAnchor
 import io.github.yozha.movieartdetails.model.DisplayLanguage
@@ -75,7 +76,8 @@ class AppSettings(context: Context) : SettingsRepository {
     /** On by default; off keeps the bare neutral color for cards that are not recognized and for app cards. */
     override fun showTitleWhenUnrecognized(): Boolean = prefs.getBoolean(K_TITLED, true)
 
-    override fun diagnosticsEnabled(): Boolean = local.getBoolean(K_DIAG, false)
+    // Debug builds record diagnostics from the start, so a problem seen on a device can be read back afterwards.
+    override fun diagnosticsEnabled(): Boolean = local.getBoolean(K_DIAG, BuildConfig.DEBUG)
 
     /** Only meaningful while diagnostics are enabled. */
     override fun logTitlesInDiagnostics(): Boolean = diagnosticsEnabled() && local.getBoolean(K_DIAG_TITLES, false)

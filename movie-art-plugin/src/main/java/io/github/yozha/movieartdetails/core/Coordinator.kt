@@ -104,7 +104,9 @@ interface HostBridge {
  *   previous generation wakes up immediately and replies with a neutral background (never hold the binder thread).
  * - ProgramCardFocused: composite cached → reply at once; rejected → the titled frame (below); otherwise a pool job
  *   (one per jobKey) and a wait of at most [tBlockMs]; on timeout → neutral, and once the job is ready,
- *   if the generation is still current, one broadcast per generation.
+ *   if the generation is still current, one broadcast per generation. If the host doesn't fetch the frame with a
+ *   TimeElapsed after it, the broadcast is repeated up to [REBROADCAST_DELAYS_MS].size times: an unanswered broadcast
+ *   would leave the neutral background until the next focus change.
  * - TimeElapsed: background for the current state; the same composite → the same URI.
  * - CardFocused: new generation, the titled frame (below), else neutral COLOR (tinted with darkColor if enabled in settings).
  * - null and any other event → empty list; any internal error → neutral COLOR.
@@ -131,6 +133,8 @@ class Coordinator(
     private val tBgMs: Long = T_BG_MS,
     /** Monotonic milliseconds. */
     private val monoMs: () -> Long = { System.nanoTime() / 1_000_000 },
+    /** Runs a task after a delay, for repeating a broadcast the host didn't act on; no repeats without one. */
+    private val later: (delayMs: Long, task: () -> Unit) -> Unit = { _, _ -> },
 ) {
 
     /** [color] is this generation's neutral COLOR reply. */
@@ -149,8 +153,18 @@ class Coordinator(
         var broadcastSent = false
     }
 
-    /** [restarts]: how many times the job was restarted after "stale" when focus returned to the card. */
-    private inner class Job(val key: String, val work: (JobContext) -> Outcome, val restarts: Int = 0) : JobContext {
+    /**
+     * [restarts]: how many times the job was restarted after "stale" when focus returned to the card.
+     * [titled]: renders a titled neutral frame rather than matching (diagnostics only).
+     */
+    private inner class Job(
+        val key: String,
+        val work: (JobContext) -> Outcome,
+        val restarts: Int = 0,
+        val titled: Boolean = false,
+    ) : JobContext {
+        val createdAt = monoMs()
+        @Volatile var startedAt = 0L
         @Volatile var deadline = Long.MAX_VALUE
         override fun isCurrent() = lock.withLock { current?.jobKey == key }
         override fun remainingMs() = deadline - monoMs()
@@ -288,7 +302,7 @@ class Coordinator(
                     when {
                         key != null -> {
                             state.outcome = null
-                            restart = work?.let { ensureJobLocked(key, it) }
+                            restart = work?.let { ensureJobLocked(key, it, titled = state.neutral != null) }
                         }
                         // The titled quick path failed before it had a job: ask it again.
                         titledCard != null -> if (state.titleRetries < MAX_TITLE_RETRIES) {
@@ -408,19 +422,19 @@ class Coordinator(
             state.neutral = neutral
             if (quick is Outcome.Pending) {
                 state.jobKey = quick.jobKey
-                job = ensureJobLocked(quick.jobKey, { ctx -> titled.prepare(neutral, ctx) })
+                job = ensureJobLocked(quick.jobKey, { ctx -> titled.prepare(neutral, ctx) }, titled = true)
             } else {
                 notify = settleLocked(state, if (quick is Outcome.Rejected && reason != null) Outcome.Rejected(reason) else quick)
             }
         }
         job?.let(::start)
-        if (notify) broadcast(state.generation, quick)
+        if (notify) broadcast(state, quick)
     }
 
     /** Guarded by lock. Creates a job if none exists; null if one is already running (the current generation gets its result). */
-    private fun ensureJobLocked(key: String, work: (JobContext) -> Outcome, restarts: Int = 0): Job? {
+    private fun ensureJobLocked(key: String, work: (JobContext) -> Outcome, restarts: Int = 0, titled: Boolean = false): Job? {
         if (jobs.containsKey(key)) return null
-        return Job(key, work, restarts).also { jobs[key] = it }
+        return Job(key, work, restarts, titled).also { jobs[key] = it }
     }
 
     private fun start(job: Job) {
@@ -437,7 +451,8 @@ class Coordinator(
             if (!job.isCurrent()) {
                 Outcome.Failed(Outcome.STALE)
             } else {
-                job.deadline = monoMs() + tBgMs
+                job.startedAt = monoMs()
+                job.deadline = job.startedAt + tBgMs
                 job.work(job)
             }
         } catch (t: Throwable) {
@@ -450,15 +465,17 @@ class Coordinator(
         var notify: CardState? = null
         var restart: Job? = null
         var unrecognized: Pair<CardState, NeutralCard>? = null
+        var fate = "dropped"
         lock.withLock {
             if (jobs[job.key] === job) jobs.remove(job.key)
             val state = current
             // A stale result isn't published (it's already cached and will be reused if focus returns to the card).
             if (state == null || state.jobKey != job.key || state.outcome != null) return@withLock
+            fate = "g=${state.generation}"
             // The job aborted as stale, but focus has already returned to the card and is waiting on the same jobKey:
             // don't store "stale" as the outcome (that would mean a neutral background until TimeElapsed); restart instead.
             if (outcome is Outcome.Failed && outcome.note == Outcome.STALE && job.restarts < MAX_STALE_RESTARTS) {
-                restart = ensureJobLocked(job.key, job.work, job.restarts + 1)
+                restart = ensureJobLocked(job.key, job.work, job.restarts + 1, job.titled)
                 return@withLock
             }
             // Matching ended without a title: show the card's own title (a waiting call keeps waiting for it).
@@ -469,9 +486,17 @@ class Coordinator(
             }
             if (settleLocked(state, outcome)) notify = state
         }
+        logJob(job, outcome, fate)
         restart?.let(::start)
         unrecognized?.let { (state, neutral) -> showTitle(state, neutral, outcome.note) }
-        notify?.let { broadcast(it.generation, outcome) }
+        notify?.let { broadcast(it, outcome) }
+    }
+
+    /** Queue and run times of a finished job, to tell a slow render from a lost delivery. No keys: they hold titles. */
+    private fun logJob(job: Job, outcome: Outcome, fate: String) {
+        val end = monoMs()
+        val ran = if (job.startedAt > 0) "queued=${job.startedAt - job.createdAt}ms run=${end - job.startedAt}ms" else "not run"
+        safeEvent("$fate job ${if (job.titled) "titled" else "match"} → ${outcome.note} $ran")
     }
 
     /** Guarded by lock. Stores the outcome and wakes the waiting call; true if the host has to be told with a broadcast. */
@@ -483,18 +508,33 @@ class Coordinator(
         return true
     }
 
-    private fun broadcast(generationOf: Long, outcome: Outcome) {
+    private fun broadcast(state: CardState, outcome: Outcome, attempt: Int = 0) {
+        val label = if (attempt == 0) "broadcast" else "rebroadcast #$attempt: not fetched"
+        var sent = false
         val line = try {
             if (host.canNotify()) {
                 host.notifyUpdated()
-                "g=$generationOf broadcast ${outcome.note}"
+                sent = true
+                "g=${state.generation} $label ${outcome.note}"
             } else {
-                "g=$generationOf broadcast skipped: screen off"
+                "g=${state.generation} $label skipped: screen off"
             }
         } catch (t: Throwable) {
-            "g=$generationOf broadcast error:${t.javaClass.simpleName}"
+            "g=${state.generation} $label error:${t.javaClass.simpleName}"
         }
         safeEvent(line)
+        if (sent && attempt < REBROADCAST_DELAYS_MS.size) confirmFetched(state, outcome, attempt)
+    }
+
+    /** Repeats the broadcast if the frame is still current and ready but the host hasn't fetched it with TimeElapsed. */
+    private fun confirmFetched(state: CardState, outcome: Outcome, attempt: Int) {
+        try {
+            later(REBROADCAST_DELAYS_MS[attempt]) {
+                val again = lock.withLock { current === state && !state.delivered && state.outcome is Outcome.Ready }
+                if (again) broadcast(state, outcome, attempt + 1)
+            }
+        } catch (_: Throwable) {
+        }
     }
 
     private fun neutral(color: String = safeNeutralColor()): List<Wallpaper> = listOf(Wallpaper(color, WallpaperType.COLOR))
@@ -534,6 +574,8 @@ class Coordinator(
         private const val MAX_STALE_RESTARTS = 2
         /** Max TimeElapsed retries of a failed titled quick path per card. */
         private const val MAX_TITLE_RETRIES = 3
+        /** Waits before each repeat of a broadcast the host didn't act on (counted from the previous one). */
+        internal val REBROADCAST_DELAYS_MS = longArrayOf(800, 1_500)
 
         private val COLOR_RE = Regex("^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
 

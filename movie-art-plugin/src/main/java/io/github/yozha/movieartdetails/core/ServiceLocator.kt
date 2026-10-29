@@ -24,7 +24,9 @@ import io.github.yozha.movieartdetails.settings.SourceAppsStore
 import io.github.yozha.movieartdetails.tmdb.TmdbHttpClient
 import java.io.File
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -95,6 +97,10 @@ object ServiceLocator {
     /** Logo downloads next to the backdrop, one per preparation thread; separate from searches so neither waits for the other. */
     private val logoPool: ExecutorService by lazy { pool("mad-logo", 2) }
     private val ioPool: ExecutorService by lazy { pool("mad-io", 1) }
+    /** Delayed one-off tasks (repeating an unanswered broadcast). */
+    private val timer: ScheduledExecutorService by lazy {
+        Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "mad-timer").apply { isDaemon = true } }
+    }
 
     internal val coordinator: Coordinator by lazy {
         // TMDB frames and titled frames share it: one render at a time.
@@ -134,6 +140,7 @@ object ServiceLocator {
             tintFromCard = { settings.tintNeutralFromCard() },
             logTitles = { settings.diagnosticsEnabled() && settings.logTitlesInDiagnostics() },
             titled = titled,
+            later = { delayMs, task -> timer.schedule({ runCatching(task) }, delayMs, TimeUnit.MILLISECONDS) },
         )
     }
 

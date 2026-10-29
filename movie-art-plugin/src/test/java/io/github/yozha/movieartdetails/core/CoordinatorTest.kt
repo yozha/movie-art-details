@@ -56,7 +56,15 @@ class CoordinatorTest {
         tintFromCard = { tint },
         titled = neutralResolver,
         tBlockMs = tBlockMs,
+        later = { delayMs, task -> timers.addLast(delayMs to task) },
     )
+
+    /** Delayed tasks the coordinator scheduled, run by hand. */
+    private val timers = ArrayDeque<Pair<Long, () -> Unit>>()
+
+    private fun runTimers() {
+        while (timers.isNotEmpty()) timers.removeFirst().second()
+    }
 
     private fun composite(title: String): Composite {
         val file = File(tmp.root, "$title.jpg").apply { writeText("jpeg") }
@@ -390,6 +398,64 @@ class CoordinatorTest {
         assertEquals(1, host.notified)
         assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Unknown")
         assertEquals(1, host.notified)
+    }
+
+    @Test
+    fun `broadcast the host doesn't act on is repeated at most twice`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        coordinator.getWallpapers(program("Video"))
+        manual.runAll()
+        assertEquals(1, host.notified)
+        assertEquals(Coordinator.REBROADCAST_DELAYS_MS[0], timers.first().first)
+        timers.removeFirst().second()
+        assertEquals(2, host.notified)
+        runTimers()
+        assertEquals(3, host.notified)
+        assertTrue(timers.isEmpty())
+        assertEquals(2, diagnostics.lines.count { "rebroadcast" in it })
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Video")
+    }
+
+    @Test
+    fun `broadcast is not repeated once TimeElapsed fetched the frame`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        coordinator.getWallpapers(program("Video"))
+        manual.runAll()
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Video")
+        runTimers()
+        assertEquals(1, host.notified)
+    }
+
+    @Test
+    fun `broadcast is not repeated after focus moved on`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        coordinator.getWallpapers(program("Video"))
+        manual.runAll()
+        titled.quickFn = { Outcome.Rejected(TitledCards.OFF) }
+        coordinator.getWallpapers(program("Next"))
+        runTimers()
+        assertEquals(1, host.notified)
+    }
+
+    @Test
+    fun `finished jobs log their kind, outcome and timings without keys`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("manual-off") }
+        coordinator.getWallpapers(program("Secret Video"))
+        manual.runAll()
+        val line = diagnostics.lines.single { " job " in it }
+        assertTrue(line, Regex("""g=\d+ job titled → \S+ queued=\d+ms run=\d+ms""").containsMatchIn(line))
+        assertTrue(line, "Secret" !in line)
+
+        resolver.quickFn = { Outcome.Pending("key:${it.title}") }
+        resolver.prepareFn = { _, _ -> Outcome.Failed("network") }
+        coordinator.getWallpapers(program("Other"))
+        coordinator.getWallpapers(program("Third"))
+        manual.runAll()
+        assertTrue(diagnostics.lines.any { Regex("""dropped job match → stale not run""").containsMatchIn(it) })
     }
 
     @Test
