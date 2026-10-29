@@ -103,6 +103,60 @@ class SourceAppsTest {
     }
 
     @Test
+    fun `a web host maps to the app named after its reversed domain`() {
+        install("tv.example", "com.example.player.android", "com.example.mediaclient")
+        assertEquals("tv.example", apps.packageFor("https://img.example.tv/posters/1.jpg"))
+        assertEquals("tv.example", apps.packageFor("https://EXAMPLE.tv/p.jpg"))
+        assertEquals("com.example.player.android", apps.packageFor("https://cdn.player.example.com/p.jpg"))
+        // A package that only starts with the reversed domain is someone else's app as far as we can tell.
+        assertNull(apps.packageFor("https://cdn.example.com/poster.jpg"))
+        assertNull(apps.packageFor("https://example.tv.example.org/p.jpg"))
+        assertNull(apps.packageFor("https://tv/p.jpg"))
+        assertNull(apps.packageFor("http://[::1]:8080/p.jpg"))
+        assertEquals("tv.example", apps.automaticPackage("img.example.tv"))
+        // Authorities stay content-only, and a domain app must be installed.
+        assertNull(apps.packageFor("content://example.tv/p"))
+        catalog.versions.remove("tv.example")
+        now += SourceApps.VERSION_TTL_MS
+        assertNull(apps.packageFor("https://img.example.tv/posters/1.jpg"))
+    }
+
+    @Test
+    fun `a jellyfin image path maps to the only jellyfin client installed`() {
+        val uri = "http://192.168.1.20:8096/Items/0123456789abcdef0123456789abcdef/Images/Thumb?fillWidth=640&tag=x"
+        assertNull(apps.packageFor(uri))
+        install("com.github.damontecres.wholphin")
+        now += SourceApps.VERSION_TTL_MS
+        assertEquals("com.github.damontecres.wholphin", apps.packageFor(uri))
+        assertEquals("com.github.damontecres.wholphin", apps.packageFor("https://media.example.org/jellyfin/items/1/images/Primary"))
+        assertEquals("com.github.damontecres.wholphin", apps.packageFor("http://10.0.0.5/emby/Items/123/Images/Backdrop/0"))
+        // The settings screen only has the host; it gets what the cards found.
+        assertEquals("com.github.damontecres.wholphin", apps.automaticPackage("192.168.1.20"))
+        // Not a server image path: in the query, or another API.
+        assertNull(apps.packageFor("http://192.168.1.21/web/index.html?next=/Items/1/Images/x"))
+        assertNull(apps.packageFor("http://192.168.1.21/Users/1/Images/Primary"))
+        // Two clients: which one put the card there is unknown.
+        install("org.jellyfin.androidtv")
+        now += SourceApps.VERSION_TTL_MS
+        assertNull(apps.packageFor("http://192.168.1.22:8096/Items/1/Images/Thumb"))
+        // The settings screen no longer names the app the first card found.
+        assertNull(apps.packageFor(uri))
+        assertNull(apps.automaticPackage("192.168.1.20"))
+        // A user choice still wins.
+        mappings.put("192.168.1.22", "org.jellyfin.androidtv")
+        assertEquals("org.jellyfin.androidtv", apps.packageFor("http://192.168.1.22:8096/Items/1/Images/Thumb"))
+    }
+
+    @Test
+    fun `plex server paths and hosts map to plex`() {
+        install("com.plexapp.android")
+        assertEquals("com.plexapp.android", apps.packageFor("http://192.168.1.30:32400/library/metadata/42/thumb/1700000000"))
+        assertEquals("com.plexapp.android", apps.packageFor("http://192.168.1.30:32400/photo/:/transcode?width=640&url=x"))
+        assertEquals("com.plexapp.android", apps.packageFor("https://10-0-0-5.0123abcd.plex.direct:32400/x.jpg"))
+        assertNull(apps.packageFor("http://192.168.1.31/media/library/metadata/1"))
+    }
+
+    @Test
     fun `user choice for a host wins over the table and the authority`() {
         install("com.example.mediaclient", "com.google.android.youtube.tv", "org.videolan.vlc", "com.example.other")
         mappings.put("192.168.1.20", "com.example.mediaclient")

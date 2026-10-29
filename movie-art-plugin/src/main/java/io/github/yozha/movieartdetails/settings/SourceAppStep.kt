@@ -20,7 +20,8 @@ internal fun BaseStep.sourceAppLabel(c: SourceAppChoice?): String = when {
 /**
  * The source app of an image host, for the badge in the info block: "Automatic" (with the app it detects, if any)
  * or one of the installed apps with a launcher activity, with its icon. Projectivy does not say which app a program card comes
- * from, and a web host (a LAN media server, a streaming CDN) cannot be traced to an app automatically.
+ * from, and many web hosts (a streaming CDN, a LAN server several installed apps can use) can't be traced to an app
+ * automatically (see SourceApps).
  * The choice is stored only on this device.
  */
 class SourceAppStep : BaseStep() {

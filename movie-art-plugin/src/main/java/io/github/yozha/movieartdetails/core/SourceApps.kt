@@ -27,7 +27,13 @@ interface AppCatalog {
  * 2. `content://` URIs: the launchable app that owns the provider authority, or else the longest launchable package
  *    name the authority starts with (`org.videolan.vlc.thumbprovider` → `org.videolan.vlc`). A provider owned by
  *    a system package without a launcher activity (the media or TV providers) is not a source app;
- * 3. a built-in table of well-known public image hosts ([HOST_TABLE]); any other web host is left to the user.
+ * 3. web URIs: a built-in table of well-known public image hosts ([HOST_TABLE]);
+ * 4. web URIs: a launchable app named after the host's domain in reverse (`img.example.tv` → `tv.example`), exactly
+ *    or with one of [DOMAIN_APP_SUFFIXES]; a package that merely starts with it (`com.example.*`) is not enough;
+ * 5. web URIs: the path of a media server's image API ([SERVER_PATHS], e.g. Jellyfin's `/Items/<id>/Images/`, usually
+ *    on a LAN address), when exactly one of that server's known clients is installed. The host is remembered for
+ *    [automaticPackage], which only knows the host, and forgotten once its cards no longer resolve this way.
+ * Anything else is left to the user.
  *
  * Safe on the binder thread: catalog answers are memoized (provider owners and the package list for [LOOKUP_TTL_MS],
  * versions for [VERSION_TTL_MS]); the user mapping lookup is an in-memory read. Card lookups never load the package
@@ -50,6 +56,8 @@ class SourceApps(
     @Volatile private var launchable: Timed<Set<String>>? = null
     /** Reloads queued on [refresher], so an expired entry is reloaded once however many cards ask for it. */
     private val pending = ConcurrentHashMap.newKeySet<String>()
+    /** Hosts whose cards were traced to an app by their path (step 5), for [automaticPackage]. */
+    private val byPath = ConcurrentHashMap<String, String>()
 
     /** Badge identity for a program card's iconUri; null when its app is unknown. */
     fun forIconUri(iconUri: String?): BadgeRef? = packageFor(iconUri)?.let(::forPackage)
@@ -63,7 +71,7 @@ class SourceApps(
     /** The installed package for [iconUri] (see the class description), or null. */
     fun packageFor(iconUri: String?): String? = try {
         val host = SourceHints.hostOf(iconUri)
-        if (host == null) null else resolve(host, content = SourceHints.schemeOf(iconUri) == "content")
+        if (host == null) null else resolve(host, iconUri.orEmpty(), content = SourceHints.schemeOf(iconUri) == "content")
     } catch (_: Exception) {
         null
     }
@@ -75,15 +83,39 @@ class SourceApps(
      */
     fun automaticPackage(host: String): String? = try {
         val h = host.trim().lowercase()
-        tablePackage(h) ?: authorityPackage(h, blocking = true)
+        tablePackage(h) ?: authorityPackage(h, blocking = true) ?: domainPackage(h, blocking = true)
+            ?: byPath[h]?.takeIf { versionOf(it) != null }
     } catch (_: Exception) {
         null
     }
 
-    private fun resolve(host: String, content: Boolean): String? {
+    private fun resolve(host: String, uri: String, content: Boolean): String? {
         // A choice of an app that has since been removed is ignored, not shown as a missing badge.
         mappings.get(host)?.takeIf { versionOf(it) != null }?.let { return it }
-        return if (content) authorityPackage(host, blocking = false) else tablePackage(host)
+        if (content) return authorityPackage(host, blocking = false)
+        return tablePackage(host) ?: domainPackage(host, blocking = false)
+            ?: serverPackage(uri).also { if (it != null) byPath[host] = it else byPath.remove(host) }
+    }
+
+    /** Step 4: a launchable package named after the reversed domain of [host], longest domain first. */
+    private fun domainPackage(host: String, blocking: Boolean): String? {
+        if (IP_HOST.matches(host) || host.startsWith('[')) return null
+        val labels = host.split('.').filter { it.isNotEmpty() }
+        if (labels.size < 2) return null
+        val packages = launchablePackages(clock(), blocking)
+        for (k in labels.size downTo 2) {
+            val base = labels.takeLast(k).asReversed().joinToString(".")
+            val pkg = (listOf(base) + DOMAIN_APP_SUFFIXES.map { base + it }).firstOrNull { it in packages && versionOf(it) != null }
+            if (pkg != null) return pkg
+        }
+        return null
+    }
+
+    /** Step 5: the only installed client of the media server whose image path [uri] has. */
+    private fun serverPackage(uri: String): String? {
+        val path = URI_PATH.find(uri.trim())?.groupValues?.get(1) ?: return null
+        val clients = SERVER_PATHS.firstOrNull { (pattern, _) -> pattern.containsMatchIn(path) }?.second ?: return null
+        return clients.filter { versionOf(it) != null }.singleOrNull()
     }
 
     /** [blocking] reloads expired answers in place; otherwise they are reloaded on [refresher] (see the class description). */
@@ -173,6 +205,35 @@ class SourceApps(
          */
         val HOST_TABLE: List<Pair<String, List<String>>> = listOf(
             "ytimg.com" to listOf("com.google.android.youtube.tv", "com.google.android.youtube"),
+            "plex.direct" to listOf("com.plexapp.android"),
+            "plex.tv" to listOf("com.plexapp.android"),
+            "nflxso.net" to listOf("com.netflix.ninja"),
+            "nflxext.com" to listOf("com.netflix.ninja"),
+            "nflximg.net" to listOf("com.netflix.ninja"),
+            "scdn.co" to listOf("com.spotify.tv.android", "com.spotify.music"),
         )
+
+        /** Endings a TV app adds to its reversed domain (`tv.example` → `tv.example.android`), for step 4. */
+        val DOMAIN_APP_SUFFIXES = listOf(".tv", ".android", ".androidtv")
+
+        /**
+         * Image paths of self-hosted media servers and their known clients, for step 5. Jellyfin and Emby share one
+         * image API (`/Items/<id>/Images/<type>`, also under a base path such as `/emby`).
+         */
+        val SERVER_PATHS: List<Pair<Regex, List<String>>> = listOf(
+            Regex("/Items/[^/]+/Images/", RegexOption.IGNORE_CASE) to listOf(
+                "com.github.damontecres.wholphin",
+                "org.jellyfin.androidtv",
+                "org.jellyfin.mobile",
+                "dev.jdtech.jellyfin",
+                "tv.emby.embyatv",
+                "com.mb.android",
+            ),
+            Regex("^(?:/library/metadata/|/photo/:/transcode)") to listOf("com.plexapp.android"),
+        )
+
+        private val IP_HOST = Regex("^[0-9.]+$")
+        /** The path of a URI, without the query and fragment. */
+        private val URI_PATH = Regex("^[a-zA-Z][a-zA-Z0-9+.\\-]*://[^/?#]*([^?#]*)")
     }
 }
