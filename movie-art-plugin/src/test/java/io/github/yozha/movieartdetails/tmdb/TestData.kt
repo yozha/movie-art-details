@@ -2,6 +2,7 @@ package io.github.yozha.movieartdetails.tmdb
 
 import io.github.yozha.movieartdetails.model.ImageInfo
 import io.github.yozha.movieartdetails.model.MediaType
+import io.github.yozha.movieartdetails.model.SeasonInfo
 import io.github.yozha.movieartdetails.model.TitleDetails
 import io.github.yozha.movieartdetails.model.Translation
 
@@ -32,14 +33,19 @@ internal object TestData {
         translations: List<Translation> = emptyList(),
         logos: List<ImageInfo> = emptyList(),
         backdrops: List<ImageInfo> = emptyList(),
+        genreIds: List<Int> = emptyList(),
+        seasonList: List<SeasonInfo> = emptyList(),
+        lastAiredSeason: Int? = null,
     ) = TitleDetails(
         mediaType = type, id = 1, title = title, originalTitle = originalTitle, originalLanguage = originalLanguage,
         overview = overview, date = date, lastAirDate = lastAirDate, status = status, runtimeMinutes = runtime,
         numberOfSeasons = seasons, genres = genres, voteAverage = voteAverage, voteCount = voteCount,
         backdropPath = backdropPath, translations = translations, logos = logos, backdrops = backdrops, imdbId = null,
+        genreIds = genreIds, seasons = seasonList, lastAiredSeason = lastAiredSeason,
     )
 
-    fun tr(lang: String, region: String, title: String?, overview: String? = null) = Translation(lang, region, title, overview)
+    fun tr(lang: String, region: String, title: String?, overview: String? = null, runtime: Int? = null) =
+        Translation(lang, region, title, overview, runtime)
 
     fun img(path: String, lang: String?, width: Int, height: Int, vote: Double = 5.0) = ImageInfo(path, lang, width, height, vote)
 }

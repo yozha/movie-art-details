@@ -35,10 +35,12 @@ class DiagnosticsLogTest {
         val d = log()
         d.event("GET https://api.themoviedb.org/3/movie/1?api_key=0123456789abcdef0123456789abcdef failed")
         d.event("api_key=secret; raw 0123456789ABCDEF0123456789ABCDEF")
+        d.event("Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTIzIn0.c2lnbmF0dXJl")
         val text = d.recent().joinToString("\n")
         assertFalse("themoviedb" in text)
         assertFalse("secret" in text)
         assertFalse("0123456789" in text)
+        assertFalse("eyJ" in text)
     }
 
     @Test

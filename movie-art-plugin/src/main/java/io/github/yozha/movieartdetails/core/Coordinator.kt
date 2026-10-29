@@ -15,8 +15,24 @@ import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
 /** Program card from the event: raw title (trimmed), type and iconUri. */
 data class FocusedCard(val title: String, val type: Int?, val iconUri: String?)
 
-/** Ready composite for the host reply. */
-data class Composite(val file: File, val title: String, val sourceUrl: String)
+/** Ready composite for the host reply: a TMDB frame, or a titled neutral frame with no source or author. */
+data class Composite(val file: File, val title: String, val sourceUrl: String?, val author: String? = TMDB_AUTHOR) {
+    companion object {
+        const val TMDB_AUTHOR = "TMDB"
+    }
+}
+
+/** A card shown without TMDB details: its own title on the neutral background. */
+data class NeutralCard(
+    /** As Projectivy sent it, trimmed. */
+    val title: String,
+    /** Program card: its iconUri, which identifies the source app. */
+    val iconUri: String? = null,
+    /** App card: its package; null for Projectivy's own shortcuts. */
+    val packageName: String? = null,
+    /** "#RRGGBB": the color the plain neutral reply uses (with the app card tint, if any). */
+    val color: String,
+)
 
 /** Result of matching and preparing a card. [note] is a short diagnostics label that never contains titles. */
 sealed interface Outcome {
@@ -52,6 +68,25 @@ interface CardResolver {
     fun prepare(card: FocusedCard, ctx: JobContext): Outcome
 }
 
+/** Titled neutral frames, with no TMDB requests. Implementation: [TitledCards]. */
+interface NeutralResolver {
+    /**
+     * On the binder thread, no rendering: Ready (a cached frame), Pending (it has to be rendered) or Rejected when the
+     * setting is off or there is nothing to show: the reply is then a plain neutral color.
+     */
+    fun quick(card: NeutralCard): Outcome
+    /** Renders on a pool thread: Ready, or Failed (a plain neutral color). */
+    fun prepare(card: NeutralCard, ctx: JobContext): Outcome
+
+    companion object {
+        /** Plain neutral colors only. */
+        val OFF: NeutralResolver = object : NeutralResolver {
+            override fun quick(card: NeutralCard): Outcome = Outcome.Rejected(TitledCards.OFF)
+            override fun prepare(card: NeutralCard, ctx: JobContext): Outcome = Outcome.Rejected(TitledCards.OFF)
+        }
+    }
+}
+
 /** Host bridge. Implementation: [ProjectivyHost]. */
 interface HostBridge {
     /** IMAGE wallpaper with a content URI; read permission is granted to Projectivy on every call. */
@@ -67,12 +102,19 @@ interface HostBridge {
  *
  * - Every focus event gets a new generation and becomes the "current card"; a waiting call from the
  *   previous generation wakes up immediately and replies with a neutral background (never hold the binder thread).
- * - ProgramCardFocused: composite cached → reply at once; rejected → neutral; otherwise a pool job
+ * - ProgramCardFocused: composite cached → reply at once; rejected → the titled frame (below); otherwise a pool job
  *   (one per jobKey) and a wait of at most [tBlockMs]; on timeout → neutral, and once the job is ready,
  *   if the generation is still current, one broadcast per generation.
  * - TimeElapsed: background for the current state; the same composite → the same URI.
- * - CardFocused: new generation, neutral COLOR (tinted with darkColor if enabled in settings).
+ * - CardFocused: new generation, the titled frame (below), else neutral COLOR (tinted with darkColor if enabled in settings).
  * - null and any other event → empty list; any internal error → neutral COLOR.
+ *
+ * Titled neutral frames ([NeutralResolver]): a program card that ends up not recognized (Rejected, from the quick path
+ * or from preparation) and an app card with a title are shown with their own title instead of a plain color. The
+ * frame is delivered the same way as a composite: from the cache at once, or rendered as a job within the T_block that
+ * is left, else the neutral COLOR now and a broadcast later. A card still being matched gets the plain COLOR, as before;
+ * a transient failure stays a plain COLOR too and is retried on TimeElapsed (a titled quick path that failed before it
+ * had a job is asked again a bounded number of times).
  */
 @Suppress("WrongConstant")
 class Coordinator(
@@ -84,16 +126,22 @@ class Coordinator(
     private val neutralColor: () -> String,
     private val tintFromCard: () -> Boolean = { false },
     private val logTitles: () -> Boolean = { false },
+    private val titled: NeutralResolver = NeutralResolver.OFF,
     private val tBlockMs: Long = T_BLOCK_MS,
     private val tBgMs: Long = T_BG_MS,
     /** Monotonic milliseconds. */
     private val monoMs: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
 
-    private class CardState(val generation: Long, val card: FocusedCard?) {
+    /** [color] is this generation's neutral COLOR reply. */
+    private class CardState(val generation: Long, val card: FocusedCard?, val color: String) {
         // Everything below is guarded by lock.
+        /** Set once the card is shown with its own title; [jobKey] and [outcome] then belong to the titled frame. */
+        var neutral: NeutralCard? = null
         var jobKey: String? = null
         var outcome: Outcome? = null
+        /** TimeElapsed retries of a titled quick path that failed before it had a job: bounded by [MAX_TITLE_RETRIES]. */
+        var titleRetries = 0
         /** A binder call of this generation is waiting for the result: no broadcast needed, it will reply itself. */
         var waiting = false
         /** The ready composite of this generation has already been returned to the host. */
@@ -102,7 +150,7 @@ class Coordinator(
     }
 
     /** [restarts]: how many times the job was restarted after "stale" when focus returned to the card. */
-    private inner class Job(val key: String, val card: FocusedCard, val restarts: Int = 0) : JobContext {
+    private inner class Job(val key: String, val work: (JobContext) -> Outcome, val restarts: Int = 0) : JobContext {
         @Volatile var deadline = Long.MAX_VALUE
         override fun isCurrent() = lock.withLock { current?.jobKey == key }
         override fun remainingMs() = deadline - monoMs()
@@ -139,12 +187,12 @@ class Coordinator(
 
     private fun onProgramCard(event: Event.ProgramCardFocused, trace: Trace): List<Wallpaper> {
         val card = FocusedCard(event.title?.trim().orEmpty(), event.type, event.iconUri)
-        val state = newGeneration(card)
+        val state = newGeneration(card, safeNeutralColor())
         trace.generation = state.generation
         if (card.title.isEmpty()) {
             trace.note = "no-title"
             settle(state, Outcome.Rejected(trace.note))
-            return neutral()
+            return neutral(state.color)
         }
         val quick = resolver.quick(card)
         trace.note = quick.note
@@ -158,46 +206,65 @@ class Coordinator(
                 }
                 listOf(host.wallpaper(quick.composite))
             }
-            is Outcome.Rejected, is Outcome.Failed -> {
+            is Outcome.Failed -> {
                 settle(state, quick)
-                neutral()
+                neutral(state.color)
             }
-            is Outcome.Pending -> {
-                when (val out = awaitPreparation(state, quick.jobKey)) {
-                    is Outcome.Ready -> {
-                        trace.note = "ready<T_block:${out.note}"
-                        listOf(host.wallpaper(out.composite))
-                    }
-                    null -> {
-                        trace.note = "neutral>T_block"
-                        neutral()
-                    }
-                    else -> {
-                        trace.note = out.note
-                        neutral()
-                    }
-                }
-            }
+            // Not recognized: the card's own title instead (or the plain color when that is off).
+            is Outcome.Rejected -> reply(state, awaitTitle(state, neutralCard(state, card)), trace, prefix = quick.note)
+            is Outcome.Pending -> reply(state, awaitPreparation(state, quick.jobKey) { ctx -> resolver.prepare(card, ctx) }, trace)
         }
     }
 
+    /** App cards have no TMDB details: the titled neutral frame with the app's badge, or the (tinted) plain color. */
     private fun onAppCard(event: Event.CardFocused, trace: Trace): List<Wallpaper> {
-        trace.generation = newGeneration(null).generation
-        trace.note = "app"
         val tint = if (event.darkColor != 0 && tintFromCard()) colorHex(event.darkColor) else null
-        return neutral(tint)
+        val state = newGeneration(null, tint ?: safeNeutralColor())
+        trace.generation = state.generation
+        trace.note = "app"
+        val title = event.title?.trim().orEmpty()
+        if (title.isEmpty()) {
+            settle(state, Outcome.Rejected(trace.note))
+            return neutral(state.color)
+        }
+        return reply(state, awaitTitle(state, NeutralCard(title, packageName = event.packageName, color = state.color)), trace, prefix = "app")
     }
+
+    /** The reply after a wait: a ready frame, or this generation's neutral color. */
+    private fun reply(state: CardState, out: Outcome?, trace: Trace, prefix: String? = null): List<Wallpaper> {
+        val result = when (out) {
+            is Outcome.Ready -> {
+                trace.note = "ready<T_block:${out.note}"
+                listOf(host.wallpaper(out.composite))
+            }
+            null -> {
+                trace.note = "neutral>T_block"
+                neutral(state.color)
+            }
+            else -> {
+                trace.note = out.note
+                neutral(state.color)
+            }
+        }
+        if (prefix != null) trace.note = "$prefix ${trace.note}"
+        return result
+    }
+
+    private fun neutralCard(state: CardState, card: FocusedCard) = NeutralCard(card.title, iconUri = card.iconUri, color = state.color)
 
     private fun onTimeElapsed(trace: Trace): List<Wallpaper> {
         var restart: Job? = null
+        var retitle: Pair<CardState, NeutralCard>? = null
+        var color: String? = null
         val ready: Composite? = lock.withLock {
             val state = current
             trace.generation = state?.generation ?: 0
-            val card = state?.card
-            if (state == null || card == null) {
+            val work = state?.let(::workOf)
+            if (state == null || (work == null && state.outcome == null)) {
                 trace.note = "te:no-card"
                 return@withLock null
             }
+            color = state.color
             val out = state.outcome
             when {
                 out is Outcome.Ready && out.composite.file.isFile -> {
@@ -216,18 +283,55 @@ class Coordinator(
                 else -> {
                     // Transient failure or the composite was deleted (cache cleared): retry without waiting.
                     trace.note = "te:retry"
-                    state.outcome = null
-                    restart = state.jobKey?.let { ensureJobLocked(it, card) }
+                    val key = state.jobKey
+                    val titledCard = state.neutral
+                    when {
+                        key != null -> {
+                            state.outcome = null
+                            restart = work?.let { ensureJobLocked(key, it) }
+                        }
+                        // The titled quick path failed before it had a job: ask it again.
+                        titledCard != null -> if (state.titleRetries < MAX_TITLE_RETRIES) {
+                            state.titleRetries++
+                            state.outcome = null
+                            retitle = state to titledCard
+                        } else {
+                            trace.note = "te:failed"
+                        }
+                        else -> state.outcome = null
+                    }
                     null
                 }
             }
         }
         restart?.let(::start)
-        return if (ready != null) listOf(host.wallpaper(ready)) else neutral()
+        val shown = ready ?: retitle?.let { (state, neutral) -> retryTitle(state, neutral) }
+        return if (shown != null) listOf(host.wallpaper(shown)) else neutral(color ?: safeNeutralColor())
     }
 
-    private fun newGeneration(card: FocusedCard?): CardState = lock.withLock {
-        CardState(++generation, card).also {
+    /** [showTitle] again from TimeElapsed, without waiting: a frame that is ready by the time it returns is the reply. */
+    private fun retryTitle(state: CardState, neutral: NeutralCard): Composite? {
+        lock.withLock { state.waiting = true }
+        try {
+            showTitle(state, neutral)
+        } finally {
+            lock.withLock { state.waiting = false }
+        }
+        return lock.withLock {
+            val out = state.outcome
+            if (current === state && out is Outcome.Ready && !state.broadcastSent) out.composite.also { state.delivered = true } else null
+        }
+    }
+
+    /** Guarded by lock. The job behind [state]'s current [CardState.jobKey]: the titled frame once there is one, else matching. */
+    private fun workOf(state: CardState): ((JobContext) -> Outcome)? {
+        state.neutral?.let { n -> return { ctx -> titled.prepare(n, ctx) } }
+        val card = state.card ?: return null
+        return { ctx -> resolver.prepare(card, ctx) }
+    }
+
+    private fun newGeneration(card: FocusedCard?, color: String): CardState = lock.withLock {
+        CardState(++generation, card, color).also {
             current = it
             changed.signalAll()
         }
@@ -238,14 +342,13 @@ class Coordinator(
     }
 
     /** Starts (or joins) a job and waits for it up to T_block. Returns null if it didn't finish in time or the generation changed. */
-    private fun awaitPreparation(state: CardState, jobKey: String): Outcome? {
-        val card = state.card ?: return null
+    private fun awaitPreparation(state: CardState, jobKey: String, work: (JobContext) -> Outcome): Outcome? {
         val job = lock.withLock {
             if (current !== state) return null
             state.jobKey = jobKey
             // Set before starting: a synchronous executor may finish the job before we begin waiting.
             state.waiting = true
-            ensureJobLocked(jobKey, card)
+            ensureJobLocked(jobKey, work)
         }
         try {
             job?.let(::start)
@@ -253,26 +356,71 @@ class Coordinator(
             lock.withLock { state.waiting = false }
             throw t
         }
-        return lock.withLock {
-            try {
-                var left = TimeUnit.MILLISECONDS.toNanos(tBlockMs)
-                while (current === state && state.outcome == null && left > 0) left = changed.awaitNanos(left)
-            } finally {
-                state.waiting = false
-            }
-            val out = state.outcome
-            when {
-                current !== state -> null
-                out is Outcome.Ready -> out.also { state.delivered = true }
-                else -> out
-            }
+        return awaitOutcome(state)
+    }
+
+    /** Shows the card with its own title ([showTitle]) and waits for the frame up to T_block, like [awaitPreparation]. */
+    private fun awaitTitle(state: CardState, neutral: NeutralCard): Outcome? {
+        lock.withLock {
+            if (current !== state) return null
+            state.waiting = true
+        }
+        try {
+            showTitle(state, neutral)
+        } catch (t: Throwable) {
+            lock.withLock { state.waiting = false }
+            throw t
+        }
+        return awaitOutcome(state)
+    }
+
+    /** Waits up to T_block for [state]'s outcome. Returns null if it didn't arrive in time or the generation changed. */
+    private fun awaitOutcome(state: CardState): Outcome? = lock.withLock {
+        try {
+            var left = TimeUnit.MILLISECONDS.toNanos(tBlockMs)
+            while (current === state && state.outcome == null && left > 0) left = changed.awaitNanos(left)
+        } finally {
+            state.waiting = false
+        }
+        val out = state.outcome
+        when {
+            current !== state -> null
+            out is Outcome.Ready -> out.also { state.delivered = true }
+            else -> out
         }
     }
 
+    /**
+     * Moves [state] to its titled frame: a cached one settles at once, otherwise a render job starts (or is joined);
+     * [NeutralResolver] saying no settles a plain neutral color, under the [reason] matching gave, if any. Called on
+     * the binder thread or, after a preparation that ended Rejected, on its pool thread.
+     */
+    private fun showTitle(state: CardState, neutral: NeutralCard, reason: String? = null) {
+        val quick = try {
+            titled.quick(neutral)
+        } catch (t: Throwable) {
+            Outcome.Failed("titled:error:${t.javaClass.simpleName}")
+        }
+        var job: Job? = null
+        var notify = false
+        lock.withLock {
+            if (current !== state) return
+            state.neutral = neutral
+            if (quick is Outcome.Pending) {
+                state.jobKey = quick.jobKey
+                job = ensureJobLocked(quick.jobKey, { ctx -> titled.prepare(neutral, ctx) })
+            } else {
+                notify = settleLocked(state, if (quick is Outcome.Rejected && reason != null) Outcome.Rejected(reason) else quick)
+            }
+        }
+        job?.let(::start)
+        if (notify) broadcast(state.generation, quick)
+    }
+
     /** Guarded by lock. Creates a job if none exists; null if one is already running (the current generation gets its result). */
-    private fun ensureJobLocked(key: String, card: FocusedCard, restarts: Int = 0): Job? {
+    private fun ensureJobLocked(key: String, work: (JobContext) -> Outcome, restarts: Int = 0): Job? {
         if (jobs.containsKey(key)) return null
-        return Job(key, card, restarts).also { jobs[key] = it }
+        return Job(key, work, restarts).also { jobs[key] = it }
     }
 
     private fun start(job: Job) {
@@ -290,7 +438,7 @@ class Coordinator(
                 Outcome.Failed(Outcome.STALE)
             } else {
                 job.deadline = monoMs() + tBgMs
-                resolver.prepare(job.card, job)
+                job.work(job)
             }
         } catch (t: Throwable) {
             Outcome.Failed("error:${t.javaClass.simpleName}")
@@ -299,9 +447,9 @@ class Coordinator(
     }
 
     private fun complete(job: Job, outcome: Outcome) {
-        var notify = false
-        var generationOf = 0L
+        var notify: CardState? = null
         var restart: Job? = null
+        var unrecognized: Pair<CardState, NeutralCard>? = null
         lock.withLock {
             if (jobs[job.key] === job) jobs.remove(job.key)
             val state = current
@@ -309,21 +457,33 @@ class Coordinator(
             if (state == null || state.jobKey != job.key || state.outcome != null) return@withLock
             // The job aborted as stale, but focus has already returned to the card and is waiting on the same jobKey:
             // don't store "stale" as the outcome (that would mean a neutral background until TimeElapsed); restart instead.
-            val card = state.card
-            if (outcome is Outcome.Failed && outcome.note == Outcome.STALE && card != null && job.restarts < MAX_STALE_RESTARTS) {
-                restart = ensureJobLocked(job.key, card, job.restarts + 1)
+            if (outcome is Outcome.Failed && outcome.note == Outcome.STALE && job.restarts < MAX_STALE_RESTARTS) {
+                restart = ensureJobLocked(job.key, job.work, job.restarts + 1)
                 return@withLock
             }
-            state.outcome = outcome
-            changed.signalAll()
-            if (outcome is Outcome.Ready && !state.waiting && !state.delivered && !state.broadcastSent) {
-                state.broadcastSent = true
-                notify = true
-                generationOf = state.generation
+            // Matching ended without a title: show the card's own title (a waiting call keeps waiting for it).
+            val card = state.card
+            if (outcome is Outcome.Rejected && state.neutral == null && card != null) {
+                unrecognized = state to neutralCard(state, card)
+                return@withLock
             }
+            if (settleLocked(state, outcome)) notify = state
         }
         restart?.let(::start)
-        if (!notify) return
+        unrecognized?.let { (state, neutral) -> showTitle(state, neutral, outcome.note) }
+        notify?.let { broadcast(it.generation, outcome) }
+    }
+
+    /** Guarded by lock. Stores the outcome and wakes the waiting call; true if the host has to be told with a broadcast. */
+    private fun settleLocked(state: CardState, outcome: Outcome): Boolean {
+        state.outcome = outcome
+        changed.signalAll()
+        if (outcome !is Outcome.Ready || state.waiting || state.delivered || state.broadcastSent) return false
+        state.broadcastSent = true
+        return true
+    }
+
+    private fun broadcast(generationOf: Long, outcome: Outcome) {
         val line = try {
             if (host.canNotify()) {
                 host.notifyUpdated()
@@ -337,8 +497,7 @@ class Coordinator(
         safeEvent(line)
     }
 
-    private fun neutral(color: String? = null): List<Wallpaper> =
-        listOf(Wallpaper(color ?: safeNeutralColor(), WallpaperType.COLOR))
+    private fun neutral(color: String = safeNeutralColor()): List<Wallpaper> = listOf(Wallpaper(color, WallpaperType.COLOR))
 
     private fun safeNeutralColor(): String =
         runCatching(neutralColor).getOrNull()?.trim()?.takeIf { COLOR_RE.matches(it) } ?: DEFAULT_NEUTRAL
@@ -373,6 +532,8 @@ class Coordinator(
         const val DEFAULT_NEUTRAL = "#101214"
         /** Max consecutive restarts after "stale" (guards against loops). */
         private const val MAX_STALE_RESTARTS = 2
+        /** Max TimeElapsed retries of a failed titled quick path per card. */
+        private const val MAX_TITLE_RETRIES = 3
 
         private val COLOR_RE = Regex("^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
 

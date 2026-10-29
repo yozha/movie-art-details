@@ -51,6 +51,9 @@ object SourceHints {
     /** Lowercase iconUri host (without port or userinfo), for diagnostics and RecentTitle.iconHost. */
     fun hostOf(iconUri: String?): String? = schemeAndHost(iconUri).second.ifEmpty { null }
 
+    /** Lowercase iconUri scheme ("content", "https"…), or null when there is none. */
+    fun schemeOf(iconUri: String?): String? = schemeAndHost(iconUri).first.ifEmpty { null }
+
     private fun byType(type: Int?): Pair<CardKind, String> {
         if (type == null) return CardKind.UNKNOWN to "type=null: movie or series"
         return when (type) {

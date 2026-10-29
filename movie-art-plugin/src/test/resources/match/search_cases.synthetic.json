@@ -1940,6 +1940,284 @@
    ]
   },
   {
+   "name": "dune_2_https_card_sequel_wording",
+   "raw": "Дюна 2",
+   "type": 0,
+   "iconUri": "https://cdn.example.com/poster/a1.jpg",
+   "expect": {
+    "media": "movie",
+    "id": 693134
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "ru-RU",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Дюна: Часть вторая",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 60.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    },
+    {
+     "media": "movie",
+     "language": "uk-UA",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 693134,
+        "title": "Дюна: Частина друга",
+        "original_title": "Dune: Part Two",
+        "release_date": "2024-02-27",
+        "popularity": 60.0,
+        "vote_count": 6000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "crash_2004_popular_film_one_year_off",
+   "raw": "Crash (2004)",
+   "type": 0,
+   "iconUri": null,
+   "expect": {
+    "media": "movie",
+    "id": 1640
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990320,
+        "title": "Crash",
+        "original_title": "Crash",
+        "release_date": "2004-09-01",
+        "popularity": 0.0,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 1640,
+        "title": "Crash",
+        "original_title": "Crash",
+        "release_date": "2005-05-06",
+        "popularity": 40.0,
+        "vote_count": 4000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990321,
+        "title": "Crash Course",
+        "original_title": "Crash Course",
+        "release_date": "2004-03-01",
+        "popularity": 0.1,
+        "vote_count": 15,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "rear_window_vlc_file_credit_prefix",
+   "raw": "Alfred Hitchcock's Rear Window 1954 1080p BluRay REMUX AVC FLAC 2.0 - SOMEGROUP",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 567
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 567,
+        "title": "Rear Window",
+        "original_title": "Rear Window",
+        "release_date": "1954-08-01",
+        "popularity": 100.0,
+        "vote_count": 10000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990291,
+        "title": "Rear Window",
+        "original_title": "Rear Window",
+        "release_date": "1998-11-22",
+        "popularity": 15.0,
+        "vote_count": 1500,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990293,
+        "name": "Rear Window",
+        "original_name": "Rear Window",
+        "first_air_date": "2020-01-01",
+        "popularity": 0.0,
+        "vote_count": 3,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "wonder_woman_1984_vlc_file_undated_pilot",
+   "raw": "Wonder.Woman.1984.1080p.WEB-DL.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": {
+    "media": "movie",
+    "id": 464052
+   },
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 297762,
+        "title": "Wonder Woman",
+        "original_title": "Wonder Woman",
+        "release_date": "2017-05-30",
+        "popularity": 180.0,
+        "vote_count": 18000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 464052,
+        "title": "Wonder Woman 1984",
+        "original_title": "Wonder Woman 1984",
+        "release_date": "2020-12-16",
+        "popularity": 80.0,
+        "vote_count": 8000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    },
+    {
+     "media": "tv",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990251,
+        "name": "Wonder Woman",
+        "original_name": "Wonder Woman",
+        "first_air_date": "",
+        "popularity": 0.3,
+        "vote_count": 32,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "origin_country": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
    "name": "reject_youtube_skip",
    "raw": "4K UHD Rainforest Sounds 🌧️ Ambient Film for Sleep (10 Hours)",
    "type": 4,
@@ -2791,6 +3069,54 @@
       ],
       "total_pages": 1,
       "total_results": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "reject_family_holidays_plural_year_off",
+   "raw": "Family.Holiday.2015.1080p.mkv",
+   "type": 4,
+   "iconUri": "content://org.videolan.vlc.thumbprovider/thumb/1",
+   "expect": null,
+   "responses": [
+    {
+     "media": "movie",
+     "language": "en-US",
+     "body": {
+      "page": 1,
+      "results": [
+       {
+        "adult": false,
+        "id": 990233,
+        "title": "Family Holidays",
+        "original_title": "Vacaciones en familia",
+        "release_date": "2014-09-03",
+        "popularity": 0.1,
+        "vote_count": 9,
+        "vote_average": 7.0,
+        "original_language": "es",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       },
+       {
+        "adult": false,
+        "id": 990231,
+        "title": "The Family",
+        "original_title": "The Family",
+        "release_date": "2013-09-13",
+        "popularity": 30.0,
+        "vote_count": 3000,
+        "vote_average": 7.0,
+        "original_language": "en",
+        "overview": "synthetic",
+        "genre_ids": [],
+        "backdrop_path": null,
+        "poster_path": null
+       }
+      ]
      }
     }
    ]

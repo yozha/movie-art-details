@@ -7,22 +7,31 @@ import io.github.yozha.movieartdetails.model.TmdbClient
 import io.github.yozha.movieartdetails.model.TmdbError
 import io.github.yozha.movieartdetails.model.TmdbErrorKind
 import io.github.yozha.movieartdetails.model.TmdbResult
+import io.github.yozha.movieartdetails.model.SearchPage
+import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromStream
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.ResponseBody
 import okio.Buffer
 
 /**
- * TMDB v3 client authenticated with an api_key.
+ * TMDB v3 client authenticated with an api_key or, for developer builds, an API Read Access Token.
  *
- * - The key is sent only as a query parameter; the URL is never logged and never ends up in [TmdbError.message].
+ * - A v3 key is sent as the api_key query parameter; a read access token is sent as a Bearer header.
+ *   Neither the URL nor the headers are ever logged or put into [TmdbError.message].
  * - OkHttp's disk HTTP cache is disabled for every request made by this client.
  * - After INVALID_KEY / SUSPENDED_KEY no requests are made until the key value changes
  *   ([validateKey], an explicit check by the user, always runs and lifts the block on success).
@@ -60,6 +69,8 @@ class TmdbHttpClient internal constructor(
     private val pauseLock = Any()
     /** Number of consecutive 429 episodes (not responses): parallel 429s within one episode count once. */
     private var consecutive429 = 0
+    /** [nowMs] of the last [warmUp] that sent requests; [NEVER] before the first one. */
+    private val lastWarmUpMs = AtomicLong(NEVER)
 
     override fun validateKey(): TmdbResult<Unit> {
         val result = api("authentication", "authentication", emptyList(), ignoreBlock = true) { el ->
@@ -70,12 +81,12 @@ class TmdbHttpClient internal constructor(
         return result
     }
 
-    override fun searchMovie(query: String, language: String, year: Int?) = search(MediaType.MOVIE, query, language, year)
+    override fun searchMovie(query: String, language: String, year: Int?) = results(searchPage(MediaType.MOVIE, query, language, year))
 
-    override fun searchTv(query: String, language: String, year: Int?) = search(MediaType.TV, query, language, year)
+    override fun searchTv(query: String, language: String, year: Int?) = results(searchPage(MediaType.TV, query, language, year))
 
     /** Only /search/movie and /search/tv, include_adult=false, page=1; a series year goes in the year parameter too. */
-    private fun search(type: MediaType, query: String, language: String, year: Int?): TmdbResult<List<Candidate>> {
+    override fun searchPage(type: MediaType, query: String, language: String, year: Int?): TmdbResult<SearchPage> {
         val label = "search/${type.path}"
         if (query.isBlank()) return err(TmdbErrorKind.BAD_REQUEST, label, "empty query")
         val params = buildList {
@@ -86,8 +97,18 @@ class TmdbHttpClient internal constructor(
             if (year != null && year > 0) add("year" to year.toString())
         }
         return api(label, label, params) { el ->
-            tmdbJson.decodeFromJsonElement(SearchPageDto.serializer(), el).results.mapNotNull { it.toCandidate(type, language) }
+            val page = tmdbJson.decodeFromJsonElement(SearchPageDto.serializer(), el)
+            SearchPage(
+                results = page.results.mapNotNull { it.toCandidate(type, language) },
+                totalPages = page.totalPages?.takeIf { it >= 0 },
+                totalResults = page.totalResults?.takeIf { it >= 0 },
+            )
         }
+    }
+
+    private fun results(r: TmdbResult<SearchPage>): TmdbResult<List<Candidate>> = when (r) {
+        is TmdbResult.Ok -> TmdbResult.Ok(r.value.results)
+        is TmdbResult.Err -> r
     }
 
     override fun findByImdb(imdbId: String, language: String): TmdbResult<List<Candidate>> {
@@ -104,13 +125,12 @@ class TmdbHttpClient internal constructor(
     override fun details(mediaType: MediaType, id: Int, language: String): TmdbResult<TitleDetails> {
         val label = "details/${mediaType.path}"
         if (id <= 0) return err(TmdbErrorKind.BAD_REQUEST, label, "invalid ID")
-        // include_image_language needs "null" to return textless backdrops.
         val iso = language.substringBefore('-').lowercase().takeIf { ISO639.matches(it) }
-        val imageLanguages = listOfNotNull(iso, "en", "null").distinct().joinToString(",")
         val params = listOf(
             "language" to language,
-            "append_to_response" to "images,translations,external_ids",
-            "include_image_language" to imageLanguages,
+            // No external_ids: a movie has imdb_id in the base object, and nothing reads a series' IMDb ID.
+            "append_to_response" to "images,translations",
+            "include_image_language" to imageLanguages(iso),
         )
         return api(label, "${mediaType.path}/$id", params) { el ->
             tmdbJson.decodeFromJsonElement(DetailsDto.serializer(), el).toDetails(mediaType)
@@ -151,9 +171,34 @@ class TmdbHttpClient internal constructor(
         }
     }
 
+    /**
+     * One keyless HEAD to the API host and one to the image host, enqueued on OkHttp's dispatcher: the DNS, TCP and TLS
+     * setup then overlaps with the binder wait instead of delaying the first search and the first image. The responses
+     * are discarded; at most once per [WARM_UP_INTERVAL_MS], and never without a key, with a rejected key or during a 429 pause.
+     */
+    override fun warmUp() {
+        val key = currentKey() ?: return
+        if (blocked?.key == key) return
+        val now = nowMs()
+        if (now < pausedUntilMs) return
+        val last = lastWarmUpMs.get()
+        if (last != NEVER && now - last < WARM_UP_INTERVAL_MS) return
+        if (!lastWarmUpMs.compareAndSet(last, now)) return
+        for (url in listOf(apiBase, imageBase)) {
+            try {
+                http.newCall(Request.Builder().url(url).head().build()).enqueue(DISCARD)
+            } catch (_: RuntimeException) {
+                // A dispatcher that is shut down: nothing to warm up.
+            }
+        }
+    }
+
     // ───────────────────────── internals ─────────────────────────
 
     private fun currentKey(): String? = apiKey()?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** A JWT-shaped credential (API Read Access Token) rather than a 32-character v3 key. */
+    private fun isReadAccessToken(key: String): Boolean = key.startsWith("eyJ") && key.count { it == '.' } == 2
 
     /** The error to return instead of a request if TMDB has already rejected [key]; null means the request may go ahead. */
     private fun blockedError(label: String, key: String): TmdbResult.Err? {
@@ -177,31 +222,36 @@ class TmdbHttpClient internal constructor(
 
         val url = apiBase.newBuilder().addPathSegments(path).apply {
             params.forEach { (k, v) -> addQueryParameter(k, v) }
-            addQueryParameter("api_key", key)
+            if (!isReadAccessToken(key)) addQueryParameter("api_key", key)
         }.build()
-        val request = Request.Builder().url(url).header("Accept", "application/json").build()
+        val request = Request.Builder().url(url).header("Accept", "application/json").apply {
+            if (isReadAccessToken(key)) header("Authorization", "Bearer $key")
+        }.build()
 
         return execute(label) {
             http.newCall(request).execute().use { r ->
                 val bytes = r.body?.let { readLimited(it, MAX_JSON_BYTES) }
                     ?: return@use err(TmdbErrorKind.TOO_LARGE, label, "response larger than $MAX_JSON_BYTES bytes", r.code)
-                handle(label, key, r.code, r.headers, bytes.toString(Charsets.UTF_8), parse)
+                handle(label, key, r.code, r.headers, bytes, parse)
             }
         }
     }
 
     /** Classifies an API response by HTTP code and status_code. */
+    // decodeFromStream is still marked experimental, though its JVM behavior has long been stable.
+    @OptIn(ExperimentalSerializationApi::class)
     private fun <T> handle(
         label: String,
         key: String,
         code: Int,
         headers: Headers,
-        text: String,
+        body: ByteArray,
         parse: (JsonElement) -> T,
     ): TmdbResult<T> {
-        val trimmed = text.trimStart()
-        val looksJson = trimmed.startsWith("{") || trimmed.startsWith("[")
-        val element = if (looksJson) runCatching { tmdbJson.parseToJsonElement(trimmed) }.getOrNull() else null
+        val first = body.firstOrNull { it.toInt().toChar() !in JSON_WHITESPACE }
+        val looksJson = first == '{'.code.toByte() || first == '['.code.toByte()
+        // Decoded straight from the bytes: no String copy of a 60–140 KB details response.
+        val element = if (looksJson) runCatching { tmdbJson.decodeFromStream(JsonElement.serializer(), ByteArrayInputStream(body)) }.getOrNull() else null
         val status = (element as? JsonObject)?.let { runCatching { tmdbJson.decodeFromJsonElement(StatusDto.serializer(), it) }.getOrNull() }
         val statusCode = status?.statusCode
 
@@ -278,7 +328,8 @@ class TmdbHttpClient internal constructor(
 
     internal companion object {
         const val NO_KEY_MESSAGE = "TMDB key not set"
-        const val MAX_JSON_BYTES = 4L * 1024 * 1024
+        /** About 7× the largest details response seen live (tv with many seasons, images and translations). */
+        const val MAX_JSON_BYTES = 1L * 1024 * 1024
         const val BACKOFF_START_MS = 2_000L
         const val BACKOFF_MAX_MS = 60_000L
         /** Guards against an absurd Retry-After: the pause is capped at 10 min. */
@@ -286,8 +337,17 @@ class TmdbHttpClient internal constructor(
         val INVALID_KEY_CODES = setOf(3, 7, 14)
         val IMDB_ID = Regex("^tt\\d{5,10}$")
         val ISO639 = Regex("^[a-z]{2,3}$")
+        private val CYRILLIC_SIBLINGS = mapOf("ru" to "uk", "uk" to "ru")
         val IMAGE_SIZE = Regex("^(original|[wh]\\d{2,4})$")
         val IMAGE_PATH = Regex("^/?[A-Za-z0-9_-]+\\.[A-Za-z0-9]{2,5}$")
+        const val WARM_UP_INTERVAL_MS = 60_000L
+        private const val NEVER = Long.MIN_VALUE
+        private val JSON_WHITESPACE = setOf(' ', '\t', '\n', '\r')
+
+        private val DISCARD = object : Callback {
+            override fun onFailure(call: Call, e: IOException) = Unit
+            override fun onResponse(call: Call, response: Response) = response.close()
+        }
 
         /** Retry-After in seconds or as an HTTP date; null if the header is missing or the value is ≤ 0. */
         fun parseRetryAfter(headers: Headers): Long? {
@@ -308,5 +368,13 @@ class TmdbHttpClient internal constructor(
             }
             return buffer.readByteArray()
         }
+
+        /**
+         * include_image_language for a details request: the display language, its Cyrillic sibling (ru for uk and uk for
+         * ru, since a uk block may show a Russian original title and needs its logo), English, and "null" for textless
+         * backdrops.
+         */
+        internal fun imageLanguages(iso: String?): String =
+            listOfNotNull(iso, iso?.let { CYRILLIC_SIBLINGS[it] }, "en", "null").distinct().joinToString(",")
     }
 }

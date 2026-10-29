@@ -23,7 +23,11 @@ class WallpaperProviderService : Service() {
         runCatching { ServiceLocator.maintainAsync() }
     }
 
-    override fun onBind(intent: Intent): IBinder = binder
+    override fun onBind(intent: Intent): IBinder {
+        // Projectivy binds before the first card: connect to TMDB now rather than on the first cold card.
+        runCatching { ServiceLocator.warmUpAsync() }
+        return binder
+    }
 
     /**
      * The service is exported (Projectivy requires it), so only calls from Projectivy itself and from

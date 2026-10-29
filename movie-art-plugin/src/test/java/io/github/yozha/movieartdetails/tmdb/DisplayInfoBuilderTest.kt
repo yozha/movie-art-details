@@ -6,14 +6,17 @@ import io.github.yozha.movieartdetails.model.DisplayLanguage.EN
 import io.github.yozha.movieartdetails.model.DisplayLanguage.RU
 import io.github.yozha.movieartdetails.model.DisplayLanguage.UK
 import io.github.yozha.movieartdetails.model.MediaType
+import io.github.yozha.movieartdetails.model.SeasonInfo
 import io.github.yozha.movieartdetails.model.TitleDetails
 import io.github.yozha.movieartdetails.tmdb.TestData.details
+import io.github.yozha.movieartdetails.tmdb.TestData.img
 import io.github.yozha.movieartdetails.tmdb.TestData.tr
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class DisplayInfoBuilderTest {
 
@@ -41,17 +44,18 @@ class DisplayInfoBuilderTest {
             info.overview,
         )
         assertEquals("/synthAvatarLogoRu.png", info.logoPath)
+        assertEquals("w500", info.logoSize)
         assertEquals("/synthAvatarMain.jpg", info.backdropPath)
         assertEquals(19995, info.tmdbId)
         assertEquals(RU, info.language)
     }
 
     @Test
-    fun avatarUkrainianFallsBackToEnglishOverview() {
+    fun avatarUkrainianHidesOverviewWithoutUkrainianText() {
         val info = build(avatar, UK)
         assertEquals("Аватар", info.title)
-        // uk overview is empty → en-US (not en-GB).
-        assertEquals("Synthetic overview: a former marine reaches a distant moon and ends up between two worlds.", info.overview)
+        // The uk overview is empty: hidden rather than shown in English next to a Ukrainian title.
+        assertNull(info.overview)
         assertEquals("Фільм", info.typeText)
         assertEquals("2 год 42 хв", info.durationText)
         assertEquals("TMDB 7,6/10", info.ratingText)
@@ -77,7 +81,8 @@ class DisplayInfoBuilderTest {
         assertEquals("2011–2019", ru.yearText)
         assertEquals("Сериал", ru.typeText)
         assertEquals("8 сезонов", ru.durationText)
-        assertEquals(listOf("Sci-Fi & Fantasy", "Драма", "Боевик и Приключения"), ru.genres)
+        // TMDB ru names "НФ и Фэнтези" and "Боевик и Приключения" are replaced by id.
+        assertEquals(listOf("Фантастика и фэнтези", "Драма", "Боевик и приключения"), ru.genres)
         assertEquals("TMDB 8,5/10", ru.ratingText)
         assertEquals("/synthGotHigh.jpg", ru.backdropPath)
         // Only an en logo while the ru title is displayed → text.
@@ -97,12 +102,14 @@ class DisplayInfoBuilderTest {
     }
 
     @Test
-    fun returningSeriesShowsStartYearOnly() {
+    fun returningSeriesShowsStartYearOnlyAndAiredSeasons() {
         val ru = build(bear, RU)
         assertEquals("Медведь", ru.title)
         assertEquals("2022", ru.yearText)
+        // number_of_seasons is 3, but season 3 is only announced.
         assertEquals("2 сезона", ru.durationText)
-        assertEquals("Synthetic overview: a young chef comes home to run the family sandwich shop.", ru.overview)
+        // The ru overview is empty: hidden, never the English one.
+        assertNull(ru.overview)
         assertNull("9 votes < threshold of 10", ru.ratingText)
         assertNull(ru.backdropPath)
         assertNull(ru.logoPath)
@@ -117,6 +124,7 @@ class DisplayInfoBuilderTest {
         val en = build(bear, EN)
         assertEquals("The Bear", en.title)
         assertEquals("2 seasons", en.durationText)
+        assertEquals("Synthetic overview: a young chef comes home to run the family sandwich shop.", en.overview)
         assertEquals("/synthBearLogoEn.png", en.logoPath)
     }
 
@@ -142,14 +150,96 @@ class DisplayInfoBuilderTest {
     fun titleChain() {
         val base = details(title = "Original", originalTitle = "Original", originalLanguage = "fr")
         val withRuEn = base.copy(translations = listOf(tr("en", "US", "Amélie"), tr("ru", "RU", "Амели")))
-        assertEquals("Амели", DisplayInfoBuilder.title(withRuEn, RU))
-        assertEquals("Amélie", DisplayInfoBuilder.title(withRuEn, UK))
+        assertEquals(ShownTitle("Амели", "ru"), DisplayInfoBuilder.title(withRuEn, RU))
+        // No uk title and a Latin original: the whole English title.
+        assertEquals(ShownTitle("Amélie", "en"), DisplayInfoBuilder.title(withRuEn, UK))
+        // No en title: a Latin original reads naturally in English.
         val onlyFr = base.copy(translations = listOf(tr("fr", "FR", "Original"), tr("de", "DE", "Deutsch")))
-        assertEquals("Original", DisplayInfoBuilder.title(onlyFr, RU))
-        // An original title in the display language wins over the English translation.
+        assertEquals(ShownTitle("Original", "fr"), DisplayInfoBuilder.title(onlyFr, EN))
+        // Nothing in the display language's script: the original as the last resort.
+        assertEquals(ShownTitle("Original", "fr"), DisplayInfoBuilder.title(onlyFr, RU))
+    }
+
+    @Test
+    fun cyrillicOriginalWinsOverEnglishForRussianAndUkrainian() {
         val russianFilm = details(title = "Солярис", originalTitle = "Солярис", originalLanguage = "ru", translations = listOf(tr("en", "US", "Solaris")))
-        assertEquals("Солярис", DisplayInfoBuilder.title(russianFilm, RU))
-        assertEquals("Solaris", DisplayInfoBuilder.title(russianFilm, UK))
+        assertEquals(ShownTitle("Солярис", "ru"), DisplayInfoBuilder.title(russianFilm, RU))
+        // No uk translation: the Cyrillic original reads naturally in Ukrainian, unlike the English title.
+        assertEquals(ShownTitle("Солярис", "ru"), DisplayInfoBuilder.title(russianFilm, UK))
+        assertEquals(ShownTitle("Solaris", "en"), DisplayInfoBuilder.title(russianFilm, EN))
+    }
+
+    @Test
+    fun emptyTranslationTitleMeansOriginalInSameScript() {
+        // TMDB leaves the en title empty when it equals the original.
+        val d = details(originalTitle = "Inception", originalLanguage = "en", translations = listOf(tr("en", "US", null, "Overview")))
+        assertEquals(ShownTitle("Inception", "en"), DisplayInfoBuilder.title(d, EN))
+        // A title without letters fits any script.
+        val digits = details(originalTitle = "1917", originalLanguage = "en", translations = listOf(tr("en", "US", "1917")))
+        assertEquals(ShownTitle("1917", "en"), DisplayInfoBuilder.title(digits, UK))
+    }
+
+    @Test
+    fun ukrainianBlockForRussianFilmWithoutUkrainianTranslationNeverMixesLanguages() {
+        val d = details(
+            title = "Сталкер", originalTitle = "Сталкер", originalLanguage = "ru",
+            translations = listOf(tr("ru", "RU", "Сталкер", "Русское описание."), tr("en", "US", "Stalker", "English overview.")),
+            logos = listOf(img("/en.png", "en", 1000, 300, vote = 9.0), img("/ru.png", "ru", 1000, 300, vote = 1.0)),
+        )
+        val uk = build(d, UK)
+        assertEquals("Сталкер", uk.title)
+        assertNull("no uk overview: hidden, not English", uk.overview)
+        assertEquals("the logo is in the language of the shown original title", "/ru.png", uk.logoPath)
+
+        val en = build(d, EN)
+        assertEquals("Stalker", en.title)
+        assertEquals("English overview.", en.overview)
+        assertEquals("/en.png", en.logoPath)
+    }
+
+    @Test
+    fun ukrainianTitleWithEmptyOverviewHidesOverview() {
+        val d = details(
+            originalTitle = "Сталкер", originalLanguage = "ru",
+            translations = listOf(tr("uk", "UA", "Сталкер", null), tr("en", "US", "Stalker", "English overview.")),
+        )
+        assertEquals(ShownTitle("Сталкер", "uk"), DisplayInfoBuilder.title(d, UK))
+        assertNull(DisplayInfoBuilder.overview(d, UK))
+    }
+
+    @Test
+    fun englishTitleFallbackPrefersEnglishLogo() {
+        val d = details(
+            originalTitle = "千と千尋の神隠し", originalLanguage = "ja",
+            translations = listOf(tr("en", "US", "Spirited Away", "English overview.")),
+            logos = listOf(
+                img("/ja.png", "ja", 1000, 300, vote = 9.0),
+                img("/en.png", "en", 1000, 300, vote = 1.0),
+            ),
+        )
+        // No ru title and no ru logo: the logo matches the English title, not the better-rated original one.
+        val ru = build(d, RU)
+        assertEquals("Spirited Away", ru.title)
+        assertNull(ru.overview)
+        assertEquals("/en.png", ru.logoPath)
+        // A ru logo is in the language of the rest of the block, so it wins even without a ru title.
+        val withRu = d.copy(logos = d.logos + img("/ru.png", "ru", 1000, 300, vote = 5.0))
+        assertEquals("/ru.png", build(withRu, RU).logoPath)
+        assertEquals("/en.png", build(withRu, UK).logoPath)
+    }
+
+    /** An empty translation title shows the original as text, but the display-language logo is still used. */
+    @Test
+    fun displayLanguageLogoUsedWhenTranslationTitleIsEmpty() {
+        val d = details(
+            originalTitle = "1917", originalLanguage = "en",
+            translations = listOf(tr("en", "US", "1917", "English overview."), tr("ru", "RU", null, "Русское описание.")),
+            logos = listOf(img("/en.png", "en", 1000, 300, vote = 9.0), img("/ru.png", "ru", 1000, 300, vote = 5.0)),
+        )
+        val ru = build(d, RU)
+        assertEquals("1917", ru.title)
+        assertEquals("/ru.png", ru.logoPath)
+        assertEquals("/en.png", build(d, EN).logoPath)
     }
 
     @Test
@@ -158,21 +248,30 @@ class DisplayInfoBuilderTest {
             tr("uk", "RU", "Title (uk-RU)", "Overview (uk-RU)"),
             tr("uk", "UA", "Ведмідь", null),
         ))
-        assertEquals("Ведмідь", DisplayInfoBuilder.title(d, UK))
-        // UA has no overview → any other region of the same language comes before English.
+        assertEquals("Ведмідь", DisplayInfoBuilder.title(d, UK).text)
+        // UA has no overview → any other region of the same language.
         assertEquals("Overview (uk-RU)", DisplayInfoBuilder.overview(d, UK))
     }
 
     @Test
-    fun overviewHiddenWithoutSelectedOrEnglish() {
-        val d = details(overview = "Fallback overview", translations = listOf(tr("de", "DE", "X", "Deutsch")))
+    fun overviewHiddenWithoutDisplayLanguage() {
+        val d = details(overview = "Fallback overview", translations = listOf(tr("de", "DE", "X", "Deutsch"), tr("en", "US", "X", "English")))
         assertNull(DisplayInfoBuilder.overview(d, RU))
+        assertNull(DisplayInfoBuilder.overview(d, UK))
+        assertEquals("English", DisplayInfoBuilder.overview(d, EN))
+    }
+
+    @Test
+    fun responseOverviewUsedWhenTitleMadeInDisplayLanguage() {
+        val d = details(originalLanguage = "ru", overview = "Описание", translations = listOf(tr("en", "US", "X", "English")))
+        assertEquals("Описание", DisplayInfoBuilder.overview(d, RU))
+        assertNull(DisplayInfoBuilder.overview(d, UK))
     }
 
     @Test
     fun withoutTranslationsArrayUsesResponseFields() {
         val d = details(title = "Аватар", originalTitle = "Avatar", overview = "  Response \n\n overview ")
-        assertEquals("Аватар", DisplayInfoBuilder.title(d, RU))
+        assertEquals(ShownTitle("Аватар", "ru"), DisplayInfoBuilder.title(d, RU))
         assertEquals("Response overview", DisplayInfoBuilder.overview(d, RU))
     }
 
@@ -208,6 +307,40 @@ class DisplayInfoBuilderTest {
     }
 
     @Test
+    fun runtimeIsTheSameInEveryLanguage() {
+        // TMDB's top-level runtime comes from the requested language's translation and may be wrong there.
+        val d = details(
+            originalLanguage = "ru", runtime = 75,
+            translations = listOf(tr("uk", "UA", null, runtime = 75), tr("en", "US", null, runtime = 120), tr("ru", "RU", null, runtime = 139)),
+        )
+        assertEquals("2 ч 19 мин", DisplayInfoBuilder.durationText(d, RU))
+        assertEquals("2 год 19 хв", DisplayInfoBuilder.durationText(d, UK))
+        assertEquals("2h 19m", DisplayInfoBuilder.durationText(d, EN))
+        // Original-language translation without a runtime → en-US → top-level.
+        val noOriginal = d.copy(translations = listOf(tr("ru", "RU", null, runtime = null), tr("en", "GB", null, runtime = 90), tr("en", "US", null, runtime = 120)))
+        assertEquals(120, DisplayInfoBuilder.runtimeMinutes(noOriginal))
+        assertEquals(75, DisplayInfoBuilder.runtimeMinutes(d.copy(translations = listOf(tr("de", "DE", null, runtime = 100)))))
+        assertNull(DisplayInfoBuilder.runtimeMinutes(details(runtime = null)))
+    }
+
+    @Test
+    fun seasonCountSkipsSpecialsAndUnairedSeasons() {
+        val today = LocalDate.of(2026, 10, 29)
+        fun tv(seasons: List<SeasonInfo>, last: Int? = null, total: Int? = null) =
+            DisplayInfoBuilder.durationText(details(type = MediaType.TV, seasons = total, seasonList = seasons, lastAiredSeason = last), EN, today)
+        val aired = listOf(SeasonInfo(0, "2021-12-15", 1), SeasonInfo(1, "2022-02-17", 9), SeasonInfo(2, "2025-01-16", 10))
+        assertEquals("2 seasons", tv(aired + SeasonInfo(3, null, 0), last = 2, total = 3))
+        assertEquals("future air date", "2 seasons", tv(aired + SeasonInfo(3, "2026-11-01", 8), total = 3))
+        assertEquals("no episodes yet", "2 seasons", tv(aired + SeasonInfo(3, "2026-10-01", 0), total = 3))
+        assertEquals("airs today", "3 seasons", tv(aired + SeasonInfo(3, "2026-10-29", 8), total = 3))
+        // Without usable seasons[]: last aired episode's season, then number_of_seasons.
+        assertEquals("2 seasons", tv(listOf(SeasonInfo(1, null, 0)), last = 2, total = 3))
+        assertEquals("3 seasons", tv(emptyList(), total = 3))
+        assertEquals("unparsable date", "3 seasons", tv(listOf(SeasonInfo(1, "soon", 5)), total = 3))
+        assertNull(tv(emptyList()))
+    }
+
+    @Test
     fun seasonPlurals() {
         fun s(n: Int, l: DisplayLanguage) = DisplayInfoBuilder.durationText(details(type = MediaType.TV, seasons = n), l)
         assertEquals("1 сезон", s(1, RU))
@@ -230,6 +363,28 @@ class DisplayInfoBuilderTest {
     fun genresCapitalizedAtMostThree() {
         val d = details(genres = listOf("драма", " ", "драма", "комедия", "мелодрама", "триллер"))
         assertEquals(listOf("Драма", "Комедия", "Мелодрама"), DisplayInfoBuilder.genres(d, RU))
+    }
+
+    @Test
+    fun russianAndUkrainianGenresInSentenceCaseKeepingAllCaps() {
+        // Unknown ids (e.g. an old cache entry): sentence case only.
+        val d = details(genres = listOf("Война и Политика", "НФ и Фэнтези", "телевизионный фильм"))
+        assertEquals(listOf("Война и политика", "НФ и фэнтези", "Телевизионный фильм"), DisplayInfoBuilder.genres(d, RU))
+        assertEquals(listOf("Екшн і пригоди"), DisplayInfoBuilder.genres(details(genres = listOf("Екшн і Пригоди")), UK))
+        // en keeps TMDB's title case.
+        assertEquals(listOf("Science Fiction", "Sci-Fi & Fantasy"), DisplayInfoBuilder.genres(details(genres = listOf("Science Fiction", "Sci-Fi & Fantasy")), EN))
+    }
+
+    @Test
+    fun compositeTvGenresReplacedById() {
+        val ru = details(genres = listOf("Боевик и Приключения", "НФ и Фэнтези", "Война и Политика", "драма"), genreIds = listOf(10759, 10765, 10768, 18))
+        assertEquals(listOf("Боевик и приключения", "Фантастика и фэнтези", "Война и политика"), DisplayInfoBuilder.genres(ru, RU))
+        val uk = details(genres = listOf("Науково фантастичний", "Екшн і Пригоди", "Політика та війна"), genreIds = listOf(10765, 10759, 10768))
+        assertEquals(listOf("Фантастика і фентезі", "Бойовик і пригоди", "Війна і політика"), DisplayInfoBuilder.genres(uk, UK))
+        val en = details(genres = listOf("Sci-Fi & Fantasy"), genreIds = listOf(10765))
+        assertEquals(listOf("Sci-Fi & Fantasy"), DisplayInfoBuilder.genres(en, EN))
+        // Ids that do not line up with the names are ignored.
+        assertEquals(listOf("Драма"), DisplayInfoBuilder.genres(details(genres = listOf("драма"), genreIds = listOf(10765, 18)), RU))
     }
 
     // ───────────────────────── rating ─────────────────────────

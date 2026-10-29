@@ -30,4 +30,11 @@ class MappingKeyTest {
             key("Alfred Hitchcock's Rear Window 1954 1080p BluRay REMUX AVC FLAC 2.0 - SOMEGROUP", CardKind.UNKNOWN),
         )
     }
+
+    @Test
+    fun strayTrailingDotDoesNotChangeKey() {
+        assertEquals("игра престолов|series|", key("Игра престолов.", CardKind.SERIES))
+        assertEquals(key("Игра престолов", CardKind.SERIES), key("Игра престолов.", CardKind.SERIES))
+        assertEquals(key("Игра престолов", CardKind.UNKNOWN), key("Игра престолов. 3 сезон 12 серия", CardKind.UNKNOWN))
+    }
 }

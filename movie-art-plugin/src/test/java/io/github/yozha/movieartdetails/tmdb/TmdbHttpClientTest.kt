@@ -76,6 +76,25 @@ class TmdbHttpClientTest {
     // ───────────────────────── requests ─────────────────────────
 
     @Test
+    fun readAccessTokenIsSentAsBearerHeaderOnly() {
+        key = TOKEN
+        server.enqueue(json(200, TestData.text("search_movie_avatar.synthetic.json")))
+        ok(client.searchMovie("Avatar", "en-US"))
+
+        val req = server.takeRequest()
+        assertEquals("Bearer $TOKEN", req.getHeader("Authorization"))
+        assertNull(req.requestUrl!!.queryParameter("api_key"))
+        assertFalse(req.path!!.contains(TOKEN))
+    }
+
+    @Test
+    fun v3KeyIsNotSentAsHeader() {
+        server.enqueue(json(200, TestData.text("search_movie_avatar.synthetic.json")))
+        ok(client.searchMovie("Avatar", "en-US"))
+        assertNull(server.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
     fun searchMovieSendsOnlyAllowedParams() {
         server.enqueue(json(200, TestData.text("search_movie_avatar.synthetic.json")))
         val list = ok(client.searchMovie("  Аватар ", "ru-RU"))
@@ -125,6 +144,32 @@ class TmdbHttpClientTest {
     }
 
     @Test
+    fun searchPageCarriesPagingTotals() {
+        server.enqueue(json(200, """{"page":1,"results":[{"id":11,"title":"Synthetic"}],"total_pages":3,"total_results":57}"""))
+        val page = ok(client.searchPage(MediaType.TV, "Synthetic", "en-US"))
+        assertEquals("/3/search/tv", server.takeRequest().requestUrl!!.encodedPath)
+        assertEquals(listOf(11), page.results.map { it.id })
+        assertEquals(MediaType.TV, page.results.single().mediaType)
+        assertEquals(3, page.totalPages)
+        assertEquals(57, page.totalResults)
+
+        server.enqueue(json(200, """{"page":1,"results":[]}"""))
+        val bare = ok(client.searchPage(MediaType.MOVIE, "Synthetic", "en-US", 1999))
+        assertNull("missing totals are unknown, not zero", bare.totalPages)
+        assertNull(bare.totalResults)
+    }
+
+    @Test
+    fun jsonResponseLargerThanOneMegabyteIsTooLarge() {
+        val padding = "x".repeat(1024 * 1024)
+        server.enqueue(json(200, """{"page":1,"results":[],"padding":"$padding"}"""))
+        assertEquals(TmdbErrorKind.TOO_LARGE, error(anySearch()).kind)
+        // A large but plausible response still parses.
+        server.enqueue(json(200, """ {"page":1,"results":[],"padding":"${"x".repeat(200 * 1024)}"}"""))
+        assertEquals(emptyList<Any>(), ok(anySearch()))
+    }
+
+    @Test
     fun blankQueryIsRejectedWithoutRequest() {
         assertEquals(TmdbErrorKind.BAD_REQUEST, error(client.searchTv("  ", "en-US")).kind)
         assertEquals(0, server.requestCount)
@@ -155,8 +200,9 @@ class TmdbHttpClientTest {
         val url = server.takeRequest().requestUrl!!
         assertEquals("/3/movie/19995", url.encodedPath)
         assertEquals("ru-RU", url.queryParameter("language"))
-        assertEquals("images,translations,external_ids", url.queryParameter("append_to_response"))
-        assertEquals("ru,en,null", url.queryParameter("include_image_language"))
+        // external_ids is not requested: a movie's imdb_id is in the base object, and nothing reads a series' IMDb ID.
+        assertEquals("images,translations", url.queryParameter("append_to_response"))
+        assertEquals("ru,uk,en,null", url.queryParameter("include_image_language"))
 
         assertEquals("Аватар", d.title)
         assertEquals("Avatar", d.originalTitle)
@@ -172,6 +218,23 @@ class TmdbHttpClientTest {
         assertEquals(3, d.logos.size)
         assertEquals(3, d.backdrops.size)
         assertNull(d.backdrops.single { it.filePath == "/synthAvatarMain.jpg" }.iso639)
+    }
+
+    /** A uk block may show a Russian original title, so it needs ru logos too, and the other way around. */
+    @Test
+    fun detailsUkrainianImageLanguagesIncludeRussian() {
+        server.enqueue(json(200, TestData.text("movie_avatar_ru.synthetic.json")))
+        ok(client.details(MediaType.MOVIE, 19995, "uk-UA"))
+        assertEquals("uk,ru,en,null", server.takeRequest().requestUrl!!.queryParameter("include_image_language"))
+    }
+
+    @Test
+    fun imageLanguages() {
+        assertEquals("ru,uk,en,null", TmdbHttpClient.imageLanguages("ru"))
+        assertEquals("uk,ru,en,null", TmdbHttpClient.imageLanguages("uk"))
+        assertEquals("en,null", TmdbHttpClient.imageLanguages("en"))
+        assertEquals("de,en,null", TmdbHttpClient.imageLanguages("de"))
+        assertEquals("en,null", TmdbHttpClient.imageLanguages(null))
     }
 
     @Test
@@ -410,6 +473,56 @@ class TmdbHttpClientTest {
         ok(anySearch())
     }
 
+    // ───────────────────────── warm-up ─────────────────────────
+
+    @Test
+    fun warmUpSendsOneKeylessHeadToEachHostAndIsThrottled() {
+        key = TOKEN
+        server.enqueue(MockResponse().setResponseCode(401))
+        server.enqueue(MockResponse().setResponseCode(403))
+        client.warmUp()
+        val requests = List(2) { server.takeRequest(5, TimeUnit.SECONDS)!! }
+        assertEquals(setOf("/3/", "/t/p/"), requests.map { it.requestUrl!!.encodedPath }.toSet())
+        for (r in requests) {
+            assertEquals("HEAD", r.method)
+            assertNull(r.requestUrl!!.queryParameter("api_key"))
+            assertNull(r.getHeader("Authorization"))
+        }
+
+        // Within the interval nothing more is sent.
+        client.warmUp()
+        assertNull(server.takeRequest(300, TimeUnit.MILLISECONDS))
+
+        now += TmdbHttpClient.WARM_UP_INTERVAL_MS
+        server.enqueue(MockResponse().setResponseCode(401))
+        server.enqueue(MockResponse().setResponseCode(403))
+        client.warmUp()
+        assertEquals(2, List(2) { server.takeRequest(5, TimeUnit.SECONDS) }.count { it != null })
+    }
+
+    @Test
+    fun warmUpNeedsAUsableKey() {
+        key = null
+        client.warmUp()
+        assertNull(server.takeRequest(300, TimeUnit.MILLISECONDS))
+
+        key = KEY
+        server.enqueue(json(401, status(7)))
+        error(anySearch())
+        server.takeRequest()
+        client.warmUp()
+        assertNull("a rejected key stops the warm-up too", server.takeRequest(300, TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun warmUpWaitsOutA429Pause() {
+        server.enqueue(json(429, status(25)).setHeader("Retry-After", "5"))
+        error(anySearch())
+        server.takeRequest()
+        client.warmUp()
+        assertNull(server.takeRequest(300, TimeUnit.MILLISECONDS))
+    }
+
     // ───────────────────────── images ─────────────────────────
 
     private fun image(bytes: ByteArray) =
@@ -453,5 +566,6 @@ class TmdbHttpClientTest {
     private companion object {
         const val KEY = "0123456789abcdef0123456789abcdef"
         const val OTHER_KEY = "fedcba9876543210fedcba9876543210"
+        const val TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTIzIn0.c2lnbmF0dXJl"
     }
 }

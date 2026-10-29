@@ -3,9 +3,9 @@
   "backdrop_path": "/synthGotRuText.jpg",
   "first_air_date": "2011-04-17",
   "genres": [
-    {"id": 10765, "name": "Sci-Fi & Fantasy"},
+    {"id": 10765, "name": "НФ и Фэнтези"},
     {"id": 18, "name": "драма"},
-    {"id": 10759, "name": "боевик и Приключения"}
+    {"id": 10759, "name": "Боевик и Приключения"}
   ],
   "id": 1399,
   "in_production": false,

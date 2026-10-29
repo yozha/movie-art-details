@@ -36,6 +36,16 @@ class KeyFormatTest {
     }
 
     @Test
+    fun readAccessTokensAreRecognizedButNeverNormalizedAsKeys() {
+        val token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwMTIzIn0.c2lnbmF0dXJl"
+        assertTrue(KeyFormat.isReadAccessToken(token))
+        assertTrue(KeyFormat.isReadAccessToken(" $token\n"))
+        assertNull(KeyFormat.normalize(token))
+        assertFalse(KeyFormat.isReadAccessToken(key))
+        assertFalse(KeyFormat.isReadAccessToken("eyJ.only-two"))
+    }
+
+    @Test
     fun maskShowsOnlyLastFour() {
         val masked = KeyFormat.mask(key.lowercase())
         assertTrue(masked.endsWith("cdef"))

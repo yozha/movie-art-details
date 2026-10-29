@@ -2,6 +2,7 @@ package io.github.yozha.movieartdetails.cache
 
 import io.github.yozha.movieartdetails.model.ImageInfo
 import io.github.yozha.movieartdetails.model.MediaType
+import io.github.yozha.movieartdetails.model.SeasonInfo
 import io.github.yozha.movieartdetails.model.TitleDetails
 import io.github.yozha.movieartdetails.model.Translation
 import org.junit.Assert.assertArrayEquals
@@ -15,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.lang.reflect.Modifier
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -48,6 +50,48 @@ class SourceCacheImplTest {
         imdbId = "tt0499549",
     )
 
+    /** Every field of TitleDetails and of its nested model types holds a non-default value. */
+    private fun fullDetails() = TitleDetails(
+        mediaType = MediaType.TV, id = 990399, title = "Тестовий серіал", originalTitle = "Test Series", originalLanguage = "en",
+        overview = "Synthetic uk-UA overview.", date = "2011-04-17", lastAirDate = "2019-05-19", status = "Ended",
+        runtimeMinutes = 57, numberOfSeasons = 8, genres = listOf("Драма", "Фантастика і фентезі"),
+        voteAverage = 8.4, voteCount = 24000, backdropPath = "/synthetic-tv-backdrop.jpg",
+        translations = listOf(Translation("uk", "UA", "Тестовий серіал", "Synthetic uk-UA overview.", runtimeMinutes = 58)),
+        logos = listOf(ImageInfo("/synthetic-tv-logo.png", "uk", 600, 150, 4.2)),
+        backdrops = listOf(ImageInfo("/synthetic-tv-backdrop.jpg", "en", 1920, 1080, 5.1)),
+        imdbId = "tt9990399",
+        genreIds = listOf(18, 10765),
+        seasons = listOf(SeasonInfo(1, "2011-04-17", 10), SeasonInfo(2, "2012-04-01", 9)),
+        lastAiredSeason = 8,
+    )
+
+    /**
+     * Fails when a model value is null, an empty string or collection, zero or false: a field added to the model
+     * with a default must be populated in [fullDetails], so the round trip proves the cache stores it.
+     */
+    private fun assertFullyPopulated(value: Any?, path: String) {
+        when (value) {
+            null -> throw AssertionError("$path is null")
+            is String -> assertTrue("$path is empty", value.isNotEmpty())
+            is Boolean -> assertTrue("$path is false", value)
+            is Number -> assertTrue("$path is zero", value.toDouble() != 0.0)
+            is Collection<*> -> {
+                assertTrue("$path is empty", value.isNotEmpty())
+                value.forEachIndexed { i, e -> assertFullyPopulated(e, "$path[$i]") }
+            }
+            is Enum<*> -> Unit
+            else -> {
+                assertEquals("unexpected type at $path", TitleDetails::class.java.`package`, value.javaClass.`package`)
+                val fields = value.javaClass.declaredFields.filterNot { Modifier.isStatic(it.modifiers) || it.isSynthetic }
+                assertTrue("$path has no fields", fields.isNotEmpty())
+                for (f in fields) {
+                    f.isAccessible = true
+                    assertFullyPopulated(f.get(value), "$path.${f.name}")
+                }
+            }
+        }
+    }
+
     private fun detailsFiles() = File(dir, "details").listFiles().orEmpty().filter { it.name.endsWith(".json") }
 
     // ───────────── details ─────────────
@@ -61,6 +105,56 @@ class SourceCacheImplTest {
         assertNull(cache.getDetails(MediaType.TV, d.id, "ru-RU", allowStale = true))
         // A new instance reads the same data from disk.
         assertEquals(d, newCache().getDetails(MediaType.MOVIE, d.id, "ru-RU", allowStale = false))
+    }
+
+    @Test
+    fun everyDetailsFieldSurvivesRoundTrip() {
+        val d = fullDetails()
+        assertFullyPopulated(d, "TitleDetails")
+        cache.putDetails(d, "uk-UA")
+        assertEquals(d, cache.getDetails(MediaType.TV, d.id, "uk-UA", allowStale = false))
+        assertEquals(d, newCache().getDetails(MediaType.TV, d.id, "uk-UA", allowStale = false))
+    }
+
+    @Test
+    fun olderSchemaDetailsAreStaleWithDefaults() {
+        // Written by schema 1, before Translation.runtimeMinutes, genreIds, seasons and lastAiredSeason existed.
+        File(dir, "details").mkdirs()
+        File(dir, "details/tv_990399_uk-UA.json").writeText(
+            """{"v":1,"fetchedAt":$now,"language":"uk-UA","mediaType":"TV","id":990399,"title":"Тестовий серіал",""" +
+                """"originalTitle":"Test Series","genres":["Драма"],"voteAverage":8.4,"voteCount":24000,""" +
+                """"translations":[{"iso639":"uk","iso3166":"UA","title":"Тестовий серіал"}]}"""
+        )
+        // Online: a miss, so the details are refetched with every field.
+        assertNull(cache.getDetails(MediaType.TV, 990399, "uk-UA", allowStale = false))
+        // Offline: still available, missing fields read back as defaults.
+        val stale = cache.getDetails(MediaType.TV, 990399, "uk-UA", allowStale = true)
+        assertNotNull(stale)
+        assertEquals(listOf("Драма"), stale!!.genres)
+        assertEquals(emptyList<Int>(), stale.genreIds)
+        assertEquals(emptyList<SeasonInfo>(), stale.seasons)
+        assertNull(stale.lastAiredSeason)
+        assertEquals(listOf(Translation("uk", "UA", "Тестовий серіал", null, null)), stale.translations)
+        assertEquals(1, detailsFiles().size)
+        // A rewrite replaces it with a fresh, complete entry.
+        cache.putDetails(fullDetails(), "uk-UA")
+        assertEquals(fullDetails(), cache.getDetails(MediaType.TV, 990399, "uk-UA", allowStale = false))
+    }
+
+    @Test
+    fun matchIndexSurvivesDetailsSchemaChange() {
+        dir.mkdirs()
+        File(dir, "matches.json").writeText("""{"v":1,"matches":{"k":{"type":"MOVIE","id":19995,"at":$now}}}""")
+        assertEquals(MediaType.MOVIE to 19995, newCache().getMatch("k"))
+    }
+
+    @Test
+    fun newerSchemaDetailsAreMissAndDeleted() {
+        cache.putDetails(details(), "ru-RU")
+        val file = detailsFiles().single()
+        file.writeText(file.readText().replace("\"v\":2", "\"v\":99"))
+        assertNull(cache.getDetails(MediaType.MOVIE, 19995, "ru-RU", allowStale = true))
+        assertTrue(detailsFiles().isEmpty())
     }
 
     @Test

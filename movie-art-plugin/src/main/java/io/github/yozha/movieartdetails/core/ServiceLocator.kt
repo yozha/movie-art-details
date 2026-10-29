@@ -11,6 +11,7 @@ import io.github.yozha.movieartdetails.model.Diagnostics
 import io.github.yozha.movieartdetails.model.MappingsRepository
 import io.github.yozha.movieartdetails.model.RecentTitlesRepository
 import io.github.yozha.movieartdetails.model.SettingsRepository
+import io.github.yozha.movieartdetails.model.SourceAppMappings
 import io.github.yozha.movieartdetails.model.SourceCache
 import io.github.yozha.movieartdetails.model.TmdbClient
 import io.github.yozha.movieartdetails.model.WallpaperRenderer
@@ -19,6 +20,7 @@ import io.github.yozha.movieartdetails.settings.AppSettings
 import io.github.yozha.movieartdetails.settings.CredentialStore
 import io.github.yozha.movieartdetails.settings.MappingsStore
 import io.github.yozha.movieartdetails.settings.RecentTitlesStore
+import io.github.yozha.movieartdetails.settings.SourceAppsStore
 import io.github.yozha.movieartdetails.tmdb.TmdbHttpClient
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -47,6 +49,10 @@ object ServiceLocator {
     val credentials: CredentialRepository by lazy { CredentialStore(context) }
     val mappings: MappingsRepository by lazy { MappingsStore(context) }
     val recent: RecentTitlesRepository by lazy { RecentTitlesStore(context) }
+    val sourceAppMappings: SourceAppMappings by lazy { SourceAppsStore(context) }
+    val appCatalog: AndroidAppCatalog by lazy { AndroidAppCatalog(context) }
+    val sourceApps: SourceApps by lazy { SourceApps(appCatalog, sourceAppMappings, refresher = ioPool) }
+    val badges: AppBadges by lazy { AndroidAppBadges(context, sourceApps) }
     val diagnostics: Diagnostics by lazy { DiagnosticsLog(context) { settings.diagnosticsEnabled() } }
 
     /**
@@ -86,9 +92,13 @@ object ServiceLocator {
     private val prepPool: ExecutorService by lazy { pool("mad-prep", 2) }
     /** Parallel movie/tv search requests within a single preparation. */
     private val searchPool: ExecutorService by lazy { pool("mad-search", 4) }
+    /** Logo downloads next to the backdrop, one per preparation thread; separate from searches so neither waits for the other. */
+    private val logoPool: ExecutorService by lazy { pool("mad-logo", 2) }
     private val ioPool: ExecutorService by lazy { pool("mad-io", 1) }
 
     internal val coordinator: Coordinator by lazy {
+        // TMDB frames and titled frames share it: one render at a time.
+        val renderLock = Any()
         val pipeline = CardPipeline(
             tmdb = tmdb,
             sourceCache = sourceCache,
@@ -99,9 +109,21 @@ object ServiceLocator {
             recent = recent,
             diagnostics = diagnostics,
             searchExecutor = searchPool,
+            logoExecutor = logoPool,
             background = { ioPool.execute(it) },
             afterPublish = ::trimCachesThrottled,
             onStorageError = ::trimCaches,
+            badges = badges,
+            renderLock = renderLock,
+        )
+        val titled = TitledCards(
+            compositeStore = compositeStore,
+            renderer = renderer,
+            settings = settings,
+            badges = badges,
+            diagnostics = diagnostics,
+            renderLock = renderLock,
+            afterPublish = ::trimCachesThrottled,
         )
         Coordinator(
             resolver = pipeline,
@@ -111,6 +133,7 @@ object ServiceLocator {
             neutralColor = { settings.neutralColor() },
             tintFromCard = { settings.tintNeutralFromCard() },
             logTitles = { settings.diagnosticsEnabled() && settings.logTitlesInDiagnostics() },
+            titled = titled,
         )
     }
 
@@ -132,6 +155,13 @@ object ServiceLocator {
     fun clearCaches() {
         sourceCache.clear()
         compositeStore.clear()
+    }
+
+    /** Opens the TMDB connections off the main thread (reading the key may touch the Keystore); the client throttles it. */
+    internal fun warmUpAsync() {
+        ioPool.execute { runCatching { tmdb.warmUp() } }
+        // The package list for source-app badges, so the first card does not load it on the binder thread.
+        ioPool.execute { runCatching { badges.warmUp() } }
     }
 
     /** Background maintenance on service start. */

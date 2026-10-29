@@ -24,7 +24,8 @@ import kotlin.math.roundToInt
 /*
  * Manual correction: recent titles → TMDB candidates (title, year, type) → confirmation;
  * entering a TMDB ID (with its type) or an IMDb ID; "Do not recognize this title"; listing and removing corrections;
- * clearing title history. Titles are only shown on screen and never written to the log.
+ * clearing title history; the source app of the title's image host (SourceAppStep).
+ * Titles are only shown on screen and never written to the log.
  */
 
 private fun BaseStep.typeLabel(type: MediaType): String =
@@ -124,12 +125,14 @@ class RecentStep : BaseStep() {
 
 /**
  * Correction of a single title: the raw title, its key, other recent titles with the same key,
- * the current correction, TMDB search candidates (movie and tv in the language of the title's script), ID entry.
+ * the current correction, TMDB search candidates (movie and tv in the language of the title's script), ID entry,
+ * and the source app of its image host, for the badge.
  */
 class CandidatesStep : BaseStep() {
     private val raw get() = requireArguments().getString(ARG_RAW).orEmpty()
     private val key get() = requireArguments().getString(ARG_KEY).orEmpty()
     private val cardType get() = requireArguments().getInt(ARG_TYPE, -1).takeIf { it >= 0 }
+    private val host get() = requireArguments().getString(ARG_HOST)
 
     private var candidates: List<Candidate> = emptyList()
     private var scores: Map<Pair<MediaType, Int>, Double> = emptyMap()
@@ -144,6 +147,7 @@ class CandidatesStep : BaseStep() {
             item(ID_SAME_KEY, getString(R.string.candidates_same_key), getString(R.string.loading)),
             item(ID_CURRENT, getString(R.string.candidates_current), getString(R.string.loading)),
         )
+        if (host != null) list += item(ID_SOURCE_APP, getString(R.string.source_app), getString(R.string.loading), next = true)
         if (candidates.isEmpty()) {
             list += item(ID_STATUS, status ?: getString(R.string.candidates_searching))
         } else {
@@ -198,6 +202,7 @@ class CandidatesStep : BaseStep() {
             describe(ID_SAME_KEY, same.joinToString("\n").ifEmpty { getString(R.string.candidates_same_key_none) })
             describe(ID_CURRENT, mapping?.let { targetLabel(it) } ?: getString(R.string.candidates_current_none))
         }
+        host?.let { h -> background({ SourceAppStep.describe(h) }) { r -> describe(ID_SOURCE_APP, sourceAppLabel(r.getOrNull())) } }
     }
 
     /**
@@ -317,6 +322,7 @@ class CandidatesStep : BaseStep() {
 
     override fun onClick(action: GuidedAction) {
         when (action.id) {
+            ID_SOURCE_APP -> host?.let { open(SourceAppStep.of(it)) }
             ID_IGNORE -> confirm(null, getString(R.string.mapping_ignored))
             ID_RESET -> {
                 val k = key
@@ -339,6 +345,8 @@ class CandidatesStep : BaseStep() {
         private const val ARG_RAW = "raw"
         private const val ARG_KEY = "key"
         private const val ARG_TYPE = "type"
+        private const val ARG_HOST = "host"
+        private const val ID_SOURCE_APP = 10L
         private const val ID_KEY = 1L
         private const val ID_SAME_KEY = 2L
         private const val ID_CURRENT = 3L
@@ -357,6 +365,7 @@ class CandidatesStep : BaseStep() {
                 putString(ARG_RAW, t.raw)
                 putString(ARG_KEY, t.key)
                 putInt(ARG_TYPE, t.type ?: -1)
+                putString(ARG_HOST, t.iconHost)
             }
         }
     }

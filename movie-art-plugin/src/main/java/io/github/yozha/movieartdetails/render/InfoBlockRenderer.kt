@@ -16,6 +16,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
@@ -23,8 +24,10 @@ import android.graphics.Typeface
 import android.text.TextPaint
 import androidx.core.content.res.ResourcesCompat
 import io.github.yozha.movieartdetails.R
+import io.github.yozha.movieartdetails.model.AppBadge
 import io.github.yozha.movieartdetails.model.AppearanceSettings
 import io.github.yozha.movieartdetails.model.DisplayInfo
+import io.github.yozha.movieartdetails.model.TextPreset
 import io.github.yozha.movieartdetails.model.WallpaperRenderer
 import java.io.File
 import java.io.FileOutputStream
@@ -39,6 +42,7 @@ import kotlin.math.roundToInt
  * Final 1920×1080 frame: center-cropped backdrop or a dark gradient, a scrim under the text, the info
  * block laid out by [LayoutEngine], encoded as JPEG q90 into out. Nothing is drawn below the bottom limit
  * or in the clock area: the layout guarantees it, and a clip enforces it too. Input bitmaps are not recycled.
+ * A card without TMDB details gets [renderTitled]: a flat background with its title and the source-app plate.
  * Thread-safe: measurement state is created per call.
  */
 class InfoBlockRenderer(context: Context) : WallpaperRenderer {
@@ -56,11 +60,9 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
         )
     }
 
-    private class Logo(val bitmap: Bitmap, val plate: Boolean) {
-        val aspect: Float get() = bitmap.width.toFloat() / bitmap.height
-    }
+    private class Logo(val bitmap: Bitmap, val plate: Boolean)
 
-    override fun render(backdrop: Bitmap?, logo: Bitmap?, info: DisplayInfo, settings: AppearanceSettings, out: File) {
+    override fun render(backdrop: Bitmap?, logo: Bitmap?, info: DisplayInfo, settings: AppearanceSettings, out: File, badge: AppBadge?) {
         val w = LayoutEngine.CANVAS_W
         val h = LayoutEngine.CANVAS_H
         val frame = LayoutEngine.frame(settings, w, h)
@@ -71,20 +73,57 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
             val tint = drawScrim(canvas, output, frame, settings.scrimIntensity)
 
             val measurer = PaintTextMeasurer { fonts.getValue(it) }
-            val prepared = logo?.takeIf { settings.showLogo }?.let { prepareLogo(it, output, frame) }
+            val sized = logo?.takeIf { settings.showLogo }?.let { sizedLogo(it, frame, settings.textPreset) }
             try {
-                val layout = LayoutEngine.layout(BlockContent.from(info, settings, prepared?.aspect), settings, measurer, w, h)
-                drawBlock(canvas, layout, prepared, measurer, tint)
+                fun layout(logo: Bitmap?) = LayoutEngine.layout(
+                    BlockContent.from(info, settings, logo?.let { it.width.toFloat() / it.height }, logo?.height?.toFloat(), badgeAspect(badge)),
+                    settings, measurer, w, h,
+                )
+                // The logo position depends on the layout (the block can be anchored above the row), so its
+                // contrast is checked where it lands; a rejected logo is laid out again as a text title.
+                var layout = layout(sized)
+                val prepared = sized?.let { bitmap -> (layout.header as? LogoBox)?.let { checkContrast(bitmap, output, it) } }
+                if (sized != null && prepared == null) layout = layout(null)
+                drawBlock(canvas, layout, prepared, measurer, tint, badge)
             } finally {
-                prepared?.bitmap?.let { if (it !== logo) it.recycle() }
+                sized?.let { if (it !== logo) it.recycle() }
             }
-            FileOutputStream(out).use { stream ->
-                if (!output.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream)) throw IOException("JPEG encode failed")
-            }
+            encode(output, out)
         } finally {
             output.recycle()
         }
     }
+
+    /**
+     * The flat [background] is the color the plain neutral reply uses, so the frame replaces it without a visible
+     * change behind the text. The left scrim is drawn only as far as the title's contrast needs (a light app color).
+     */
+    override fun renderTitled(title: String, badge: AppBadge?, background: Int, settings: AppearanceSettings, out: File) {
+        val w = LayoutEngine.CANVAS_W
+        val h = LayoutEngine.CANVAS_H
+        val frame = LayoutEngine.frame(settings, w, h)
+        val output = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        try {
+            val canvas = Canvas(output)
+            canvas.drawColor(background or OPAQUE)
+            val tint = drawScrim(canvas, output, frame, intensity = 0f)
+            val measurer = PaintTextMeasurer { fonts.getValue(it) }
+            val layout = LayoutEngine.layout(BlockContent.titled(title, settings, badgeAspect(badge)), settings, measurer, w, h)
+            drawBlock(canvas, layout, null, measurer, tint, badge)
+            encode(output, out)
+        } finally {
+            output.recycle()
+        }
+    }
+
+    private fun encode(output: Bitmap, out: File) {
+        FileOutputStream(out).use { stream ->
+            if (!output.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream)) throw IOException("JPEG encode failed")
+        }
+    }
+
+    private fun badgeAspect(badge: AppBadge?): Float? =
+        badge?.bitmap?.takeIf { it.width > 0 && it.height > 0 }?.let { LayoutEngine.badgeAspect(it.width, it.height, badge.banner) }
 
     // ───────────── Background ─────────────
 
@@ -163,31 +202,34 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
     // ───────────── Logo ─────────────
 
     /**
-     * Logo checks: size first ([LayoutEngine.logoUsable]), then the contrast between the mean luminance of
-     * its opaque pixels and the already darkened background behind it. A light logo with too little contrast
-     * gets a plate; a dark logo on a dark background is replaced with the text title (null).
+     * First logo check: transparent padding trimmed, then the size ([LayoutEngine.logoUsable] in the real [frame]
+     * with [preset]). Returns the trimmed bitmap (or [source] itself when there was nothing to trim), or null.
      */
-    private fun prepareLogo(source: Bitmap, output: Bitmap, frame: Frame): Logo? {
+    private fun sizedLogo(source: Bitmap, frame: Frame, preset: TextPreset): Bitmap? {
         if (source.width <= 0 || source.height <= 0) return null
         val trimmed = trimTransparent(source) ?: return null
-        fun reject(): Logo? {
-            if (trimmed !== source) trimmed.recycle()
-            return null
-        }
-        if (!LayoutEngine.logoUsable(trimmed.width, trimmed.height)) return reject()
+        if (LayoutEngine.logoUsable(trimmed.width, trimmed.height, frame, preset)) return trimmed
+        if (trimmed !== source) trimmed.recycle()
+        return null
+    }
 
-        val own = sample(trimmed, 0, 0, trimmed.width, trimmed.height, step = 2, minAlpha = 128)
-        if (own.count == 0) return reject()
-        val k = min(LayoutEngine.LOGO_CHECK_W / trimmed.width, LayoutEngine.LOGO_CHECK_H / trimmed.height)
-        val left = frame.left.toInt()
-        val top = frame.top.toInt()
-        val behind = sample(output, left, top, left + (trimmed.width * k).roundToInt(), top + (trimmed.height * k).roundToInt(), step = 4)
+    /**
+     * Second logo check: the contrast between the mean luminance of its opaque pixels and the already darkened
+     * background behind the laid-out [box]. A light logo with too little contrast gets a plate; a dark logo on a
+     * dark background is replaced with the text title (null). The caller owns [bitmap] either way.
+     */
+    private fun checkContrast(bitmap: Bitmap, output: Bitmap, box: LogoBox): Logo? {
+        val own = sample(bitmap, 0, 0, bitmap.width, bitmap.height, step = 2, minAlpha = 128)
+        if (own.count == 0) return null
+        val left = box.left.toInt()
+        val top = box.top.toInt()
+        val behind = sample(output, left, top, left + box.width.roundToInt(), top + box.height.roundToInt(), step = 4)
         val logoL = own.meanLuminance()
         val backL = behind.meanLuminance()
         return when {
-            ColorMath.contrast(logoL, backL) >= LOGO_CONTRAST -> Logo(trimmed, plate = false)
-            logoL > backL -> Logo(trimmed, plate = true)
-            else -> reject()
+            ColorMath.contrast(logoL, backL) >= LOGO_CONTRAST -> Logo(bitmap, plate = false)
+            logoL > backL -> Logo(bitmap, plate = true)
+            else -> null
         }
     }
 
@@ -216,7 +258,7 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
 
     // ───────────── Block ─────────────
 
-    private fun drawBlock(canvas: Canvas, layout: BlockLayout, logo: Logo?, measurer: PaintTextMeasurer, tint: Int) {
+    private fun drawBlock(canvas: Canvas, layout: BlockLayout, logo: Logo?, measurer: PaintTextMeasurer, tint: Int, badge: AppBadge?) {
         val f = layout.frame
         canvas.save()
         // Safety net on top of the layout: no pixel (shadows included) below the limit or in the clock area.
@@ -237,6 +279,7 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
             null -> Unit
         }
         layout.meta?.let { meta ->
+            if (meta.badge != null && badge != null) drawBadge(canvas, meta.badge, badge, tint)
             meta.main?.let { drawLine(canvas, it, textPaint(measurer, it.style, META_COLOR)) }
             meta.rating?.let { drawLine(canvas, it, textPaint(measurer, it.style, RATING_COLOR)) }
         }
@@ -245,6 +288,34 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
             drawLayout(canvas, it.text, textPaint(measurer, it.style, OVERVIEW_COLOR), it.left, it.top, it.width, it.lines, it.pitch)
         }
         canvas.restore()
+    }
+
+    /**
+     * The source-app plate, as on Projectivy's own info panel: a banner fills the rounded plate (center-cropped to
+     * its shape); an icon sits inset on a plate of the scrim tint.
+     */
+    private fun drawBadge(canvas: Canvas, box: BadgeBox, badge: AppBadge, tint: Int) {
+        val image = badge.bitmap
+        if (image.isRecycled || image.width <= 0 || image.height <= 0) return
+        val rect = RectF(box.left, box.top, box.right, box.bottom)
+        val radius = box.height * BADGE_RADIUS
+        val filter = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        if (badge.banner) {
+            val scale = max(rect.width() / image.width, rect.height() / image.height)
+            val srcW = (rect.width() / scale).roundToInt().coerceIn(1, image.width)
+            val srcH = (rect.height() / scale).roundToInt().coerceIn(1, image.height)
+            val left = (image.width - srcW) / 2
+            val top = (image.height - srcH) / 2
+            canvas.save()
+            canvas.clipPath(Path().apply { addRoundRect(rect, radius, radius, Path.Direction.CW) })
+            canvas.drawBitmap(image, Rect(left, top, left + srcW, top + srcH), rect, filter)
+            canvas.restore()
+        } else {
+            val plate = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (tint and 0x00FFFFFF) or (BADGE_PLATE_ALPHA shl 24) }
+            canvas.drawRoundRect(rect, radius, radius, plate)
+            val inset = box.height * BADGE_ICON_INSET
+            canvas.drawBitmap(image, null, RectF(rect.left + inset, rect.top + inset, rect.right - inset, rect.bottom - inset), filter)
+        }
     }
 
     private fun drawLine(canvas: Canvas, line: TextLine, paint: TextPaint) = canvas.drawText(line.text, line.left, line.baseline, paint)
@@ -312,6 +383,11 @@ class InfoBlockRenderer(context: Context) : WallpaperRenderer {
         const val PLATE_PAD = 12f
         const val PLATE_RADIUS = 14f
         const val PLATE_ALPHA = 0x99
+        const val OPAQUE = 0xFF000000.toInt()
+        /** Corner radius of the source-app plate, as a fraction of its height. */
+        const val BADGE_RADIUS = 0.14f
+        const val BADGE_ICON_INSET = 0.1f
+        const val BADGE_PLATE_ALPHA = 0xCC
 
         fun smoothstep(value: Float): Float {
             val t = value.coerceIn(0f, 1f)

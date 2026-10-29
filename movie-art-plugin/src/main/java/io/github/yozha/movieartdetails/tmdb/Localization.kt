@@ -9,6 +9,11 @@ import java.util.Locale
 /** Info panel strings in the display language. No Android resources, so they can be checked in JVM tests. */
 internal object Localization {
 
+    /** TMDB TV genre ids. */
+    const val GENRE_ACTION_ADVENTURE = 10759
+    const val GENRE_SCI_FI_FANTASY = 10765
+    const val GENRE_WAR_POLITICS = 10768
+
     fun locale(lang: DisplayLanguage): Locale = Locale.forLanguageTag(lang.tmdb)
 
     fun typeText(type: MediaType, lang: DisplayLanguage): String = when (type) {
@@ -37,6 +42,29 @@ internal object Localization {
         DisplayLanguage.UK -> "$n ${slavic(n, "сезон", "сезони", "сезонів")}"
         DisplayLanguage.EN -> if (n == 1) "1 season" else "$n seasons"
     }
+
+    /**
+     * ru/uk names for TMDB's composite TV genres, keyed by genre id (names on TMDB can be edited, ids cannot).
+     * TMDB's own names are in title case, abbreviated, or incomplete (the uk Sci-Fi & Fantasy name drops fantasy).
+     * null: use the TMDB name.
+     */
+    fun genreName(id: Int, lang: DisplayLanguage): String? = when (lang) {
+        DisplayLanguage.RU -> RU_GENRES[id]
+        DisplayLanguage.UK -> UK_GENRES[id]
+        DisplayLanguage.EN -> null
+    }
+
+    private val RU_GENRES = mapOf(
+        GENRE_ACTION_ADVENTURE to "Боевик и приключения",
+        GENRE_SCI_FI_FANTASY to "Фантастика и фэнтези",
+        GENRE_WAR_POLITICS to "Война и политика",
+    )
+
+    private val UK_GENRES = mapOf(
+        GENRE_ACTION_ADVENTURE to "Бойовик і пригоди",
+        GENRE_SCI_FI_FANTASY to "Фантастика і фентезі",
+        GENRE_WAR_POLITICS to "Війна і політика",
+    )
 
     /** "TMDB 7.6/10": HALF_UP to one decimal place; ru/uk use a decimal comma, en a dot. */
     fun rating(voteAverage: Double, lang: DisplayLanguage): String {

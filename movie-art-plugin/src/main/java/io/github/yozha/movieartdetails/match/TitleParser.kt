@@ -45,7 +45,8 @@ object TitleParser {
     /** Weak tags: these can be ordinary words too, so they are only stripped as a tail after the year. */
     private const val WEAK = "web|hd|sd|dv|ma|rus|eng|ukr|ua|subs?|dub|dual|multi|mvo|dvo|avo|proper|repack|rerip|" +
         "extended|unrated|uncut|remastered|imax|open[ .]matte|limited|internal|nf|amzn|dsnp|hmax|atvp|hulu|" +
-        "itunes|[257][ .][01]|3d|hfr|director'?s[ .]cut|theatrical|rip"
+        "itunes|[257][ .][01]|3d|hfr|director'?s[ .]cut|theatrical|rip|" +
+        "criterion|restored|hybrid|(?:\\d{1,2}(?:st|nd|rd|th)[ .])?anniversary[ .]edition|special[ .]edition|collector'?s[ .]edition"
     private val WEAK_RUN = Regex("""(?:[\s.\-_\[\](),]*$WB(?:$WEAK)$WE)+[\s.\-_\[\](),]*$""", IC)
     private val LEADING_GROUP = Regex("""^\[([^\]]*)\]\s*""")
 
@@ -53,6 +54,10 @@ object TitleParser {
     private class Marker(val regex: Regex, val seasonGroup: Int, val episodeGroup: Int)
 
     private val MARKERS = listOf(
+        Marker(
+            Regex("""$WB(\d{1,2})[ ._-]?(?:-?й[ ._-]?)?сезон[ ._,-]*(\d{1,3})[ ._-]?(?:-?я[ ._-]?)?(?:серия|эпизод)$WE""", IC),
+            1, 2,
+        ),
         Marker(Regex("""${WB}s(\d{1,2})[ ._-]?e(\d{1,3})(?!\d)""", IC), 1, 2),
         Marker(Regex("""$WB(\d{1,2})x(\d{2,3})$WE""", IC), 1, 2),
         Marker(
@@ -70,8 +75,8 @@ object TitleParser {
     private val TRAILING_YEAR = Regex("""$WB[(\[]?((?:19|20)\d\d)[)\]]?\s*$""")
     private val TRAILING_BRACKET = Regex("""\s*[(\[][^()\[\]]*[)\]]\s*$""")
     private val EMPTY_BRACKETS = Regex("""\([\s\-_.,/]*\)|\[[\s\-_.,/]*\]|\{[\s\-_.,/]*\}""")
-    private const val LEAD_JUNK = "-_,;:|/+~*"
-    private const val TRAIL_JUNK = "-_,;:|/+~*([{"
+    private const val LEAD_JUNK = "-_,;:|/+~*."
+    private const val TRAIL_JUNK = "-_,;:|/+~*([{."
     private const val YEAR_HEAD_JUNK = "-_.,|/([{"
     private const val OPEN_QUOTES = "\"«“„'"
     private const val CLOSE_QUOTES = "\"»”“'"
@@ -116,7 +121,10 @@ object TitleParser {
         var episode: Int? = null
         // Markers are searched in each "Localized / Original" part separately. A marker missing from any part
         // ("Open Season 2" or "Star Wars: Episode 4…" next to a title without it) is part of the movie title.
-        val found = parts.map { p -> MARKERS.firstNotNullOfOrNull { mk -> mk.regex.find(p)?.let { mk to it } } }
+        // The earliest marker in the part wins; at the same position, the one listed first.
+        val found = parts.map { p ->
+            MARKERS.mapNotNull { mk -> mk.regex.find(p)?.let { mk to it } }.minByOrNull { (_, m) -> m.range.first }
+        }
         if (parts.indices.all { found[it] != null || !parts[it].any(Char::isLetter) }) {
             for ((i, f) in found.withIndex()) {
                 val (marker, m) = f ?: continue
@@ -216,10 +224,13 @@ object TitleParser {
     private fun isCyrillic(s: Script) =
         s == Script.CYRILLIC_RU || s == Script.CYRILLIC_UK || s == Script.CYRILLIC_AMBIGUOUS
 
+    /** Trims separators and stray dots ("Title." → "Title"), then enclosing quotes. */
     private fun clean(s: String): String {
-        var t = TitleText.collapse(s.replace(EMPTY_BRACKETS, " "))
-        t = t.trimStart { it.isWhitespace() || it in LEAD_JUNK }.trimEnd { it.isWhitespace() || it in TRAIL_JUNK }
-        if (t.length >= 2 && t.first() in OPEN_QUOTES && t.last() in CLOSE_QUOTES) t = t.substring(1, t.length - 1).trim()
+        var t = trimJunk(TitleText.collapse(s.replace(EMPTY_BRACKETS, " ")))
+        if (t.length >= 2 && t.first() in OPEN_QUOTES && t.last() in CLOSE_QUOTES) t = trimJunk(t.substring(1, t.length - 1))
         return t
     }
+
+    private fun trimJunk(s: String): String =
+        s.trimStart { it.isWhitespace() || it in LEAD_JUNK }.trimEnd { it.isWhitespace() || it in TRAIL_JUNK }
 }

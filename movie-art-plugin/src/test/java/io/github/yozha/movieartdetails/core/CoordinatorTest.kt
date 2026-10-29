@@ -25,6 +25,7 @@ class CoordinatorTest {
     @get:Rule val tmp = TemporaryFolder()
 
     private val resolver = FakeResolver()
+    private val titled = FakeNeutral()
     private val host = FakeHost()
     private val manual = ManualExecutor()
     private val diagnostics = FakeDiagnostics()
@@ -37,6 +38,7 @@ class CoordinatorTest {
     @Before
     fun setUp() {
         resolver.prepareFn = { card, _ -> Outcome.Ready(composite(card.title), "rendered") }
+        titled.prepareFn = { card, _ -> Outcome.Ready(composite("titled-${card.title}"), "titled") }
         coordinator = coordinator(manual, tBlockMs = 30)
     }
 
@@ -45,13 +47,14 @@ class CoordinatorTest {
         pools.forEach { it.shutdownNow() }
     }
 
-    private fun coordinator(executor: Executor, tBlockMs: Long) = Coordinator(
+    private fun coordinator(executor: Executor, tBlockMs: Long, neutralResolver: NeutralResolver = NeutralResolver.OFF) = Coordinator(
         resolver = resolver,
         host = host,
         executor = executor,
         diagnostics = diagnostics,
         neutralColor = { neutral },
         tintFromCard = { tint },
+        titled = neutralResolver,
         tBlockMs = tBlockMs,
     )
 
@@ -60,7 +63,7 @@ class CoordinatorTest {
         return Composite(file, title, "https://www.themoviedb.org/movie/1")
     }
 
-    private fun program(title: String?, type: Int? = 0) = Event.ProgramCardFocused(title = title, type = type, iconUri = null)
+    private fun program(title: String?, type: Int? = 0, iconUri: String? = null) = Event.ProgramCardFocused(title = title, type = type, iconUri = iconUri)
 
     private fun List<Wallpaper>.single(): Wallpaper {
         assertEquals(1, size)
@@ -353,7 +356,239 @@ class CoordinatorTest {
         assertNotEquals(0, diagnostics.lines.size)
     }
 
+    // ───────────── titled neutral frames ─────────────
+
+    @Test
+    fun `rejected card is shown with its own title when rendered within T_block`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        val icon = "https://i.ytimg.com/vi/x/hq.jpg"
+        assertImage(coordinator.getWallpapers(program(" Sample Video ", type = 4, iconUri = icon)), "titled-Sample Video")
+        assertEquals(NeutralCard("Sample Video", iconUri = icon, color = neutral), titled.prepared.single())
+        assertTrue(resolver.prepared.isEmpty())
+        assertEquals(0, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Sample Video")
+    }
+
+    @Test
+    fun `cached titled frame is served at once without a job`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("negative") }
+        titled.quickFn = { Outcome.Ready(composite("titled-${it.title}"), "titled:L2") }
+        assertImage(coordinator.getWallpapers(program("Unknown")), "titled-Unknown")
+        assertEquals(0, manual.size)
+        assertEquals(0, host.notified)
+    }
+
+    @Test
+    fun `slow titled render returns neutral, then one broadcast`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("manual-off") }
+        assertNeutral(coordinator.getWallpapers(program("Unknown")))
+        assertEquals(1, manual.size)
+        manual.runAll()
+        assertEquals(1, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Unknown")
+        assertEquals(1, host.notified)
+    }
+
+    @Test
+    fun `preparation that ends rejected switches the waiting call to the titled frame`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        resolver.prepareFn = { _, _ -> Outcome.Rejected("low-confidence") }
+        assertImage(coordinator.getWallpapers(program("Unknown")), "titled-Unknown")
+        assertEquals(listOf("Unknown"), resolver.prepared)
+        assertEquals("Unknown", titled.prepared.single().title)
+        assertEquals(0, host.notified)
+    }
+
+    @Test
+    fun `preparation that ends rejected after T_block delivers the titled frame by broadcast`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.prepareFn = { _, _ -> Outcome.Rejected("low-confidence") }
+        // Still being matched: the plain color, as before.
+        assertNeutral(coordinator.getWallpapers(program("Unknown")))
+        assertTrue(titled.quickCards.isEmpty())
+        manual.runAll()
+        assertEquals(listOf("Unknown"), resolver.prepared)
+        assertEquals(1, titled.prepared.size)
+        assertEquals(1, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Unknown")
+    }
+
+    @Test
+    fun `transient failure stays a plain color`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        resolver.prepareFn = { _, _ -> Outcome.Failed("tmdb:NETWORK") }
+        assertNeutral(coordinator.getWallpapers(program("Avatar")))
+        assertTrue(titled.quickCards.isEmpty())
+    }
+
+    @Test
+    fun `titled frames turned off keep the plain color and the matching reason`() {
+        titled.quickFn = { Outcome.Rejected(TitledCards.OFF) }
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.prepareFn = { _, _ -> Outcome.Rejected("low-confidence") }
+        assertNeutral(coordinator.getWallpapers(program("Unknown")))
+        manual.runAll()
+        assertEquals(0, manual.size)
+        assertTrue(titled.prepared.isEmpty())
+        assertEquals(0, host.notified)
+        assertNeutral(coordinator.getWallpapers(Event.TimeElapsed))
+
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        assertNeutral(coordinator.getWallpapers(program("Video", type = 4)))
+        assertTrue(diagnostics.lines.last().contains("skip:youtube"))
+    }
+
+    @Test
+    fun `app card is shown with its title and package on the tinted background`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        tint = true
+        val app = Event.CardFocused(darkColor = 0xFF123456.toInt(), title = " Sample App ", packageName = "com.example.app")
+        assertImage(coordinator.getWallpapers(app), "titled-Sample App")
+        assertEquals(NeutralCard("Sample App", packageName = "com.example.app", color = "#123456"), titled.prepared.single())
+        assertTrue(resolver.prepared.isEmpty())
+        // Projectivy's own shortcuts have no package: the title alone.
+        assertImage(coordinator.getWallpapers(Event.CardFocused(title = "Shortcut")), "titled-Shortcut")
+        assertEquals(NeutralCard("Shortcut", color = neutral), titled.prepared.last())
+    }
+
+    @Test
+    fun `app card without a title keeps the plain tinted color`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        tint = true
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(darkColor = 0xFF123456.toInt(), title = "  ")), "#123456")
+        assertTrue(titled.quickCards.isEmpty())
+        assertNeutral(coordinator.getWallpapers(Event.TimeElapsed), "#123456")
+    }
+
+    @Test
+    fun `program card without a title gets no titled frame`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        assertNeutral(coordinator.getWallpapers(program("  ")))
+        assertTrue(titled.quickCards.isEmpty())
+    }
+
+    @Test
+    fun `TimeElapsed keeps the app card tint`() {
+        tint = true
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(darkColor = 0xFF123456.toInt(), title = "App")), "#123456")
+        assertNeutral(coordinator.getWallpapers(Event.TimeElapsed), "#123456")
+    }
+
+    @Test
+    fun `failed titled render is a plain color and is retried on TimeElapsed`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        titled.prepareFn = { _, _ -> Outcome.Failed("titled:error") }
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(title = "App", packageName = "com.example.app")))
+        manual.runAll()
+        assertEquals(0, host.notified)
+
+        titled.prepareFn = { card, _ -> Outcome.Ready(composite("titled-${card.title}"), "titled") }
+        assertNeutral(coordinator.getWallpapers(Event.TimeElapsed))
+        assertEquals(1, manual.size)
+        manual.runAll()
+        assertEquals(2, titled.prepared.size)
+        assertTrue(resolver.prepared.isEmpty())
+        assertEquals(1, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-App")
+    }
+
+    @Test
+    fun `titled quick path that failed before its job is retried on TimeElapsed`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        var fail = true
+        titled.quickFn = { if (fail) throw IllegalStateException("boom") else Outcome.Pending("titled|${it.title}|${it.color}", "titled:pending") }
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(title = "App", packageName = "com.example.app")))
+        assertEquals(0, manual.size)
+
+        fail = false
+        assertNeutral(coordinator.getWallpapers(Event.TimeElapsed))
+        assertEquals(2, titled.quickCards.size)
+        assertEquals(1, manual.size)
+        manual.runAll()
+        assertEquals(1, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-App")
+    }
+
+    @Test
+    fun `unrecognized card whose titled quick path failed gets a cached frame on TimeElapsed`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        titled.quickFn = { throw IllegalStateException("boom") }
+        assertNeutral(coordinator.getWallpapers(program("Video", type = 4)))
+
+        titled.quickFn = { Outcome.Ready(composite("titled-${it.title}"), "titled:L2") }
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Video")
+        assertEquals(0, manual.size)
+        assertEquals(0, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "titled-Video")
+        assertEquals(2, titled.quickCards.size)
+    }
+
+    @Test
+    fun `retries of a failing titled quick path are bounded`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        titled.quickFn = { throw IllegalStateException("boom") }
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(title = "App")))
+        repeat(6) { assertNeutral(coordinator.getWallpapers(Event.TimeElapsed)) }
+        // The first try plus three retries.
+        assertEquals(4, titled.quickCards.size)
+        assertTrue(diagnostics.lines.last().contains("te:failed"))
+        assertEquals(0, manual.size)
+    }
+
+    @Test
+    fun `titled render of a card that lost focus is skipped`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        coordinator.getWallpapers(Event.CardFocused(title = "App A"))
+        resolver.quickFn = { Outcome.Ready(composite(it.title), "L2") }
+        assertImage(coordinator.getWallpapers(program("Avatar")), "Avatar")
+        manual.runAll()
+        assertTrue(titled.prepared.isEmpty())
+        assertEquals(0, host.notified)
+        assertImage(coordinator.getWallpapers(Event.TimeElapsed), "Avatar")
+    }
+
+    @Test
+    fun `exception in the titled quick path returns neutral`() {
+        coordinator = coordinator(manual, tBlockMs = 30, neutralResolver = titled)
+        titled.quickFn = { throw IllegalStateException("boom") }
+        tint = true
+        assertNeutral(coordinator.getWallpapers(Event.CardFocused(darkColor = 0xFF123456.toInt(), title = "App")), "#123456")
+        resolver.quickFn = { Outcome.Rejected("skip") }
+        assertNeutral(coordinator.getWallpapers(program("Video")))
+    }
+
+    @Test
+    fun `diagnostics carry no titles of titled cards`() {
+        coordinator = coordinator(Executor { it.run() }, tBlockMs = 1_000, neutralResolver = titled)
+        resolver.quickFn = { Outcome.Rejected("skip:youtube") }
+        coordinator.getWallpapers(program("Secret Video", type = 4))
+        coordinator.getWallpapers(Event.CardFocused(title = "Secret App"))
+        assertTrue(diagnostics.lines.isNotEmpty())
+        assertTrue(diagnostics.lines.none { "Secret" in it })
+    }
+
     // ───────────── fakes ─────────────
+
+    private class FakeNeutral : NeutralResolver {
+        var quickFn: (NeutralCard) -> Outcome = { Outcome.Pending("titled|${it.title}|${it.color}", "titled:pending") }
+        var prepareFn: (NeutralCard, JobContext) -> Outcome = { _, _ -> Outcome.Failed("unset") }
+        val quickCards = CopyOnWriteArrayList<NeutralCard>()
+        val prepared = CopyOnWriteArrayList<NeutralCard>()
+
+        override fun quick(card: NeutralCard): Outcome {
+            quickCards += card
+            return quickFn(card)
+        }
+
+        override fun prepare(card: NeutralCard, ctx: JobContext): Outcome {
+            prepared += card
+            return prepareFn(card, ctx)
+        }
+    }
 
     private class FakeResolver : CardResolver {
         var quickFn: (FocusedCard) -> Outcome = { Outcome.Pending("key:${it.title}") }

@@ -36,7 +36,7 @@ class ProjectivyHost(context: Context, private val store: CompositeStore) : Host
             displayMode = WallpaperDisplayMode.CROP,
             title = composite.title,
             source = composite.sourceUrl,
-            author = "TMDB",
+            author = composite.author,
             actionUri = null,
         )
     }

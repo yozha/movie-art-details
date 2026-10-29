@@ -16,12 +16,16 @@ import okhttp3.Interceptor
  * [interceptor] (installed on the shared client in ServiceLocator) registers every OkHttp call in it,
  * and a watchdog timer cancels them when the deadline passes; the client gets an IOException and reports NETWORK.
  * The response body is read inside [within], so the deadline covers that too.
+ * The interceptor also notes when the response headers arrived ([responseAtMs]), so a download can be timed without
+ * the rate limiter wait, connection setup and time to first byte.
  */
 internal object RequestDeadline {
 
     private class Scope(val deadlineMs: Long) {
         private val calls = ArrayList<Call>()
         private var expired = false
+        /** Monotonic ms at which the last call in this scope received its response headers. */
+        @Volatile var responseAtMs: Long? = null
 
         @Synchronized
         fun attach(call: Call) {
@@ -45,12 +49,16 @@ internal object RequestDeadline {
 
     /** Installed on OkHttpClient via addInterceptor; a no-op outside [within]. */
     val interceptor = Interceptor { chain ->
-        current.get()?.attach(chain.call())
-        chain.proceed(chain.request())
+        val scope = current.get()
+        scope?.attach(chain.call())
+        chain.proceed(chain.request()).also { scope?.responseAtMs = nowMs() }
     }
 
     /** Time left in the current thread's scope, in ms; null outside [within]. */
     fun remainingMs(): Long? = current.get()?.let { it.deadlineMs - nowMs() }
+
+    /** Monotonic ms (System.nanoTime based) at which the current scope's last call received its response headers; null if none did. */
+    fun responseAtMs(): Long? = current.get()?.responseAtMs
 
     /** Runs [block]; OkHttp calls inside it are canceled after [timeoutMs] (a nested scope never outlives the outer one). */
     fun <T> within(timeoutMs: Long, block: () -> T): T {

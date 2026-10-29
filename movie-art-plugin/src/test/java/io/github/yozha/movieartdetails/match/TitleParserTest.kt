@@ -165,4 +165,92 @@ class TitleParserTest {
         assertEquals(2011, file.year)
         assertNull(file.episode)
     }
+
+    @Test
+    fun russianSeasonThenEpisodeWording() {
+        val p = TitleParser.parse("Игра престолов 3 сезон 12 серия")
+        assertEquals("Игра престолов", p.primary)
+        assertEquals(3, p.season)
+        assertEquals(12, p.episode)
+        assertEquals(listOf("Игра престолов 3 сезон 12 серия"), p.alternates)
+
+        val file = TitleParser.parse("Шерлок 2 сезон 1 серия.avi")
+        assertEquals("Шерлок", file.primary)
+        assertEquals(2, file.season)
+        assertEquals(1, file.episode)
+        assertTrue(file.looksLikeFileName)
+
+        val ordinal = TitleParser.parse("Шерлок 2-й сезон, 1-я серия")
+        assertEquals("Шерлок", ordinal.primary)
+        assertEquals(2, ordinal.season)
+        assertEquals(1, ordinal.episode)
+
+        val tagged = TitleParser.parse("Игра престолов (2011) 1 сезон 5 серия WEB-DL 1080p")
+        assertEquals("Игра престолов", tagged.primary)
+        assertEquals(2011, tagged.year)
+        assertEquals(1, tagged.season)
+        assertEquals(5, tagged.episode)
+    }
+
+    @Test
+    fun earliestMarkerInPartWins() {
+        // "Episode 5" is listed before "S02" among the markers, but "S02" comes first in the text.
+        val p = TitleParser.parse("Severance S02 Episode 5")
+        assertEquals("Severance", p.primary)
+        assertEquals(2, p.season)
+        assertNull(p.episode)
+    }
+
+    @Test
+    fun strayDotsAroundTitleAreTrimmed() {
+        val p = TitleParser.parse("Игра престолов.")
+        assertEquals("Игра престолов", p.primary)
+        assertEquals("игра престолов", p.normalized)
+        assertTrue(p.alternates.isEmpty())
+
+        val episode = TitleParser.parse("Игра престолов. 3 сезон 12 серия")
+        assertEquals("Игра престолов", episode.primary)
+        assertEquals(3, episode.season)
+        assertEquals(12, episode.episode)
+        // Dots inside the title stay.
+        assertEquals("Володар перснів. Хранителі персня", TitleParser.parse("Володар перснів. Хранителі персня").primary)
+        assertEquals("Солярис", TitleParser.parse("«Солярис».").primary)
+    }
+
+    @Test
+    fun editionWordsAfterYearAreStripped() {
+        val criterion = TitleParser.parse("Solaris.1972.Criterion.1080p.BluRay.x264.mkv")
+        assertEquals("Solaris", criterion.primary)
+        assertEquals(1972, criterion.year)
+        for (raw in listOf(
+            "Movie.Name.2010.Special.Edition.1080p.mkv",
+            "Movie.Name.2010.Collectors.Edition.mkv",
+            "Movie.Name.2010.25th.Anniversary.Edition.Restored.mkv",
+            "Movie.Name.2010.Hybrid.2160p.mkv",
+        )) {
+            val p = TitleParser.parse(raw)
+            assertEquals(raw, "Movie Name", p.primary)
+            assertEquals(raw, 2010, p.year)
+        }
+        // Without a year before them, edition words are ordinary title words.
+        assertEquals("The Criterion Affair", TitleParser.parse("The.Criterion.Affair.1080p.mkv").primary)
+    }
+
+    @Test
+    fun numberFormSpellsNumeralsAsDigits() {
+        fun nf(s: String) = TitleText.numberForm(TitleText.compareForm(s))
+        assertEquals("дюна 2", nf("Дюна: Часть вторая"))
+        assertEquals("дюна 2", nf("Дюна: Частина друга"))
+        assertEquals("дюна 2", nf("Дюна 2"))
+        assertEquals("dune 2", nf("Dune: Part Two"))
+        assertEquals("dune 2", nf("Dune: Part II"))
+        assertEquals("9 1 2 weeks", nf("Nine 1/2 Weeks"))
+        assertEquals("rocky 4", nf("Rocky IV"))
+        assertEquals("7", nf("Seven"))
+        assertEquals("se7en", nf("Se7en"))
+        // A lone Roman-looking word is a title, and a final "I" is not turned into a number.
+        assertEquals("x", nf("X"))
+        assertEquals("star wars episode i", nf("Star Wars: Episode I"))
+        assertEquals("", TitleText.numberForm(""))
+    }
 }

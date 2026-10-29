@@ -262,4 +262,178 @@ class TitleMatcherTest {
         assertTrue(TitleMatcher.similarity("avatar", "avatar the way of water") < 0.5)
         assertEquals(0.0, TitleMatcher.similarity("", "up"), 0.0)
     }
+
+    // ── Same-named contenders within the margin ──
+
+    @Test
+    fun popularFilmOneYearOffBeatsObscureExactYear() {
+        // Festival vs release dating: a 3-vote short dated exactly loses to the well-known film dated a year later.
+        val crash = listOf(movie(990301, "Crash", "2004-06-01", 3), movie(1640, "Crash", "2005-05-06", 4000))
+        for (kind in listOf(CardKind.MOVIE, CardKind.UNKNOWN)) {
+            val r = TitleMatcher.match(TitleParser.parse("Crash (2004)"), kind, crash)
+            assertEquals("kind=$kind", 1640, r.accepted?.id)
+            // The scores are unchanged: the obscure film still leads the ranking.
+            assertEquals(990301, r.ranked.first().candidate.id)
+            assertTrue(r.reason, r.reason.contains("vote count"))
+        }
+        // Without a clear lead in votes the card stays unsure.
+        val close = listOf(movie(990301, "Crash", "2004-06-01", 1500), movie(1640, "Crash", "2005-05-06", 4000))
+        assertNull(TitleMatcher.match(TitleParser.parse("Crash (2004)"), CardKind.MOVIE, close).accepted)
+    }
+
+    @Test
+    fun unknownTypeTieIsBrokenOnlyByLargeVoteLead() {
+        val inception = listOf(movie(27205, "Inception", "2010-07-15", 36000), movie(990302, "Inception", "1980-01-01", 0))
+        assertEquals(27205, TitleMatcher.match(TitleParser.parse("Inception"), CardKind.UNKNOWN, inception).accepted?.id)
+
+        val dune = listOf(movie(438631, "Dune", "2021-09-15", 15000), movie(990303, "Dűne", "2020-01-01", 37))
+        val file = TitleMatcher.match(TitleParser.parse("Dune.2021.2160p.WEB-DL.mkv"), CardKind.UNKNOWN, dune)
+        assertEquals(438631, file.accepted?.id)
+
+        // A movie and a series of the same name: an unknown type needs a 10× lead.
+        val clash = { seriesVotes: Int -> listOf(movie(990304, "Synthetic Title", "2015-01-01", 5000), tv(990305, "Synthetic Title", "2016-01-01", seriesVotes)) }
+        assertNull(TitleMatcher.match(TitleParser.parse("Synthetic Title"), CardKind.UNKNOWN, clash(600)).accepted)
+        assertEquals(990304, TitleMatcher.match(TitleParser.parse("Synthetic Title"), CardKind.UNKNOWN, clash(400)).accepted?.id)
+        // A known type keeps the 3× rule.
+        val movies = listOf(movie(990304, "Synthetic Title", "2015-01-01", 5000), movie(990306, "Synthetic Title", "2016-01-01", 1500))
+        assertEquals(990304, TitleMatcher.match(TitleParser.parse("Synthetic Title"), CardKind.MOVIE, movies).accepted?.id)
+    }
+
+    @Test
+    fun episodeFileWithUnknownTypeUsesSeriesVoteRule() {
+        val series = listOf(
+            tv(246, "Avatar: The Last Airbender", "2005-02-21", 5200),
+            tv(82452, "Avatar: The Last Airbender", "2024-02-22", 1400),
+        )
+        val parsed = TitleParser.parse("Avatar.The.Last.Airbender.S01E01.The.Boy.in.the.Iceberg.1080p.mkv")
+        assertEquals(246, TitleMatcher.match(parsed, CardKind.UNKNOWN, series).accepted?.id)
+    }
+
+    @Test
+    fun sameNamedFilmsArePickedByYearOrVotes() {
+        val film = { id: Int, date: String, votes: Int ->
+            Candidate(MediaType.MOVIE, id, "Тестовий фільм", "Тестовий фільм", date, votes / 10.0, votes, "uk", "uk-UA")
+        }
+        val films = listOf(film(990311, "1972-01-01", 14), film(990312, "2019-10-10", 154))
+        assertEquals(990312, TitleMatcher.match(TitleParser.parse("Тестовий фільм"), CardKind.MOVIE, films).accepted?.id)
+        assertEquals(990312, TitleMatcher.match(TitleParser.parse("Тестовий фільм"), CardKind.UNKNOWN, films).accepted?.id)
+        assertEquals(990311, TitleMatcher.match(TitleParser.parse("Тестовий фільм (1972)"), CardKind.MOVIE, films).accepted?.id)
+    }
+
+    @Test
+    fun domesticSeriesWinsOverForeignShownUnderSameName() {
+        val series = { id: Int, original: String, date: String, votes: Int ->
+            Candidate(MediaType.TV, id, "Тестовый сериал", original, date, votes / 10.0, votes, null, "ru-RU")
+        }
+        val domestic = series(990401, "Тестовый сериал", "2012-10-22", 113)
+        val rest = listOf(series(990403, "Serial Testowy", "2021-09-04", 5), series(990404, "Тестовый сериал", "2017-01-01", 0))
+        // 113 votes is not 3× the foreign 47, but it is 2× and the only original-title match with votes.
+        val r = TitleMatcher.match(TitleParser.parse("Тестовый сериал"), CardKind.SERIES, listOf(series(990402, "Test Series", "2010-09-28", 47), domestic) + rest)
+        assertEquals(990401, r.accepted?.id)
+        // A foreign contender with more than half the votes keeps it ambiguous.
+        assertNull(TitleMatcher.match(TitleParser.parse("Тестовый сериал"), CardKind.SERIES, listOf(series(990402, "Test Series", "2010-09-28", 60), domestic) + rest).accepted)
+        // A Latin card gets no domestic preference.
+        val latin = listOf(tv(990405, "Test Series", "2012-10-22", 113), tv(990406, "Test Series", "2010-09-28", 47, original = "Prueba"))
+        assertNull(TitleMatcher.match(TitleParser.parse("Test Series"), CardKind.SERIES, latin).accepted)
+    }
+
+    // ── Year and title details ──
+
+    @Test
+    fun undatedCandidateIsPenalizedAgainstDatedCard() {
+        val pilot = tv(990250, "Wonder Woman", null, 32)
+        val ww84 = movie(464052, "Wonder Woman 1984", "2020-12-16", 8000)
+        val r = TitleMatcher.match(TitleParser.parse("Wonder.Woman.1984.1080p.WEB-DL.mkv"), CardKind.UNKNOWN, listOf(pilot, ww84))
+        assertEquals(464052, r.accepted?.id)
+        val pilotScore = r.ranked.first { it.candidate.id == 990250 }
+        assertTrue(pilotScore.explanation, pilotScore.explanation.contains("year=-0.10"))
+        // A lone undated exact title with a known type still passes.
+        assertEquals(990501, TitleMatcher.match(TitleParser.parse("Up (2009)"), CardKind.MOVIE, listOf(movie(990501, "Up", null))).accepted?.id)
+    }
+
+    @Test
+    fun yearOneOffCountsOnlyForExactTitle() {
+        val r = TitleMatcher.match(
+            TitleParser.parse("Family.Holiday.2015.1080p.mkv"), CardKind.UNKNOWN,
+            listOf(movie(990502, "Family Holidays", "2014-09-03", 9, original = "Vacaciones en familia")),
+        )
+        assertNull(r.accepted)
+        assertTrue(r.ranked.first().explanation, r.ranked.first().explanation.contains("year=+0.00"))
+        // A fuzzy title with the exact year is unaffected.
+        val seven = TitleMatcher.match(TitleParser.parse("Seven (1995)"), CardKind.MOVIE, listOf(movie(807, "Se7en", "1995-09-22", 20000)))
+        assertEquals(807, seven.accepted?.id)
+        assertTrue(seven.ranked.first().explanation, seven.ranked.first().explanation.startsWith("title=0.90 year=+0.10"))
+    }
+
+    @Test
+    fun numeralsAndSequelWordingMatch() {
+        val dune2 = Candidate(MediaType.MOVIE, 693134, "Дюна: Часть вторая", "Dune: Part Two", "2024-02-27", 60.0, 6000, "en", "ru-RU")
+        val r = TitleMatcher.match(TitleParser.parse("Дюна 2"), CardKind.MOVIE, listOf(dune2))
+        assertEquals(693134, r.accepted?.id)
+        assertTrue(r.ranked.first().explanation, r.ranked.first().explanation.startsWith("title=1.00"))
+
+        val weeks = listOf(movie(18167, "Another 9 1/2 Weeks", "1997-01-01", 100), movie(10068, "Nine 1/2 Weeks", "1986-02-14", 1000))
+        assertEquals(10068, TitleMatcher.match(TitleParser.parse("9 1/2 Weeks"), CardKind.MOVIE, weeks).accepted?.id)
+        // A number in the candidate only is not the same film.
+        assertNull(TitleMatcher.match(TitleParser.parse("Avatar 3"), CardKind.MOVIE, listOf(movie(19995, "Avatar", "2009-12-15", 32000))).accepted)
+    }
+
+    @Test
+    fun mainTitleOfSubtitledCandidate() {
+        val cosmos = listOf(
+            tv(990601, "Cosmos: A Spacetime Odyssey", "2014-03-09", 1500),
+            tv(990602, "Cosmos: A Personal Voyage", "1980-09-28", 600),
+        )
+        val r = TitleMatcher.match(TitleParser.parse("Cosmos.2014.S01E01.1080p.mkv"), CardKind.UNKNOWN, cosmos)
+        assertEquals(990601, r.accepted?.id)
+
+        val cyrillic = tv(990603, "Тестовый сериал. Подзаголовок", "2023-11-09", 300)
+        assertEquals(990603, TitleMatcher.match(TitleParser.parse("Тестовый сериал (2023) 1 сезон 5 серия"), CardKind.UNKNOWN, listOf(cyrillic)).accepted?.id)
+
+        // A franchise name alone is not enough for a series card.
+        val airbender = TitleMatcher.match(TitleParser.parse("Avatar"), CardKind.SERIES, listOf(tv(246, "Avatar: The Last Airbender", "2005-02-21", 4000)))
+        assertNull(airbender.accepted)
+        assertTrue(airbender.confidence >= TitleMatcher.UNSURE && airbender.confidence < TitleMatcher.ACCEPT)
+        // The exact title keeps a clear lead over a sequel that shares the main title.
+        val dunes = listOf(movie(693134, "Dune: Part Two", "2024-02-27", 20000), movie(438631, "Dune", "2021-09-15", 12000))
+        assertEquals(438631, TitleMatcher.match(TitleParser.parse("Dune"), CardKind.MOVIE, dunes).accepted?.id)
+    }
+
+    @Test
+    fun russianEpisodeWordingFindsSeries() {
+        val got = Candidate(MediaType.TV, 1399, "Игра престолов", "Game of Thrones", "2011-04-17", 300.0, 25000, "en", "ru-RU")
+        for (raw in listOf("Игра престолов 3 сезон 12 серия", "Игра престолов. 3 сезон 12 серия")) {
+            assertEquals(raw, 1399, TitleMatcher.match(TitleParser.parse(raw), CardKind.UNKNOWN, listOf(got)).accepted?.id)
+        }
+    }
+
+    // ── Possessive credit prefix ──
+
+    @Test
+    fun creditPrefixIsIgnoredForTheLeader() {
+        val raw = "Alfred Hitchcock's Rear Window 1954 1080p BluRay REMUX AVC FLAC 2.0 - SOMEGROUP"
+        val windows = listOf(movie(567, "Rear Window", "1954-08-01", 10000), movie(990701, "Rear Window", "1998-11-22", 300))
+        val r = TitleMatcher.match(TitleParser.parse(raw), CardKind.UNKNOWN, windows)
+        assertEquals(567, r.accepted?.id)
+        assertTrue(r.ranked.first().explanation, r.ranked.first().explanation.startsWith("title=0.95 year=+0.10"))
+    }
+
+    @Test
+    fun creditPrefixDoesNotPromoteAnotherCandidate() {
+        val r = TitleMatcher.match(
+            TitleParser.parse("Alan Smithee's Vampires"), CardKind.MOVIE,
+            listOf(movie(990702, "Alan Smithee's Fog", "2001-01-01"), movie(990703, "Vampires", "1998-10-30", 900)),
+        )
+        assertNull(r.accepted)
+        assertEquals(990702, r.ranked.first().candidate.id)
+    }
+
+    @Test
+    fun leadingArticleIsNotACredit() {
+        val advocate = listOf(movie(990704, "Advocate", "1997-10-17", 500))
+        assertNull(TitleMatcher.match(TitleParser.parse("The Devil's Advocate"), CardKind.MOVIE, advocate).accepted)
+        // A possessive that is part of the title matches as a whole.
+        val ferris = listOf(movie(9377, "Ferris Bueller's Day Off", "1986-06-11", 5000), movie(990705, "Day Off", "2010-01-01", 900))
+        assertEquals(9377, TitleMatcher.match(TitleParser.parse("Ferris Bueller's Day Off"), CardKind.MOVIE, ferris).accepted?.id)
+    }
 }

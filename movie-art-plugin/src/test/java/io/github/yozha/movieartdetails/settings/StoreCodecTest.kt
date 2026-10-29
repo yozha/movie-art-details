@@ -62,4 +62,40 @@ class StoreCodecTest {
         val t = RecentTitle("Future", 0, null, "future|movie|", now + day)
         assertEquals(listOf(t), StoreCodec.pruneRecent(listOf(t), now))
     }
+
+    @Test
+    fun sourceAppsRoundTrip() {
+        val items = linkedMapOf("192.168.1.20" to "com.example.mediaclient", "i.ytimg.com" to "com.google.android.youtube.tv")
+        assertEquals(items, StoreCodec.decodeSourceApps(StoreCodec.encodeSourceApps(items)))
+    }
+
+    @Test
+    fun corruptSourceAppsFileGivesEmptyMapAndBadItemsAreSkipped() {
+        listOf("", "{", "[]", "{\"v\":2,\"items\":[]}", "<html>").forEach { assertTrue(StoreCodec.decodeSourceApps(it).isEmpty()) }
+        val text = """
+            {"v":1,"items":[
+              {"host":"","pkg":"com.example.a"},
+              {"host":"bad host","pkg":"com.example.a"},
+              {"host":"a/b","pkg":"com.example.a"},
+              {"host":"cdn.example.com","pkg":"not a package"},
+              {"host":"cdn.example.com","pkg":"single"},
+              {"host":"cdn.example.com","pkg":"com.example.1app"},
+              {"host":" CDN.Example.COM ","pkg":"com.example.app"},
+              {"host":"cdn.example.com","pkg":"com.example.duplicate"},
+              {"pkg":"com.example.nohost"}
+            ]}
+        """.trimIndent()
+        assertEquals(mapOf("cdn.example.com" to "com.example.app"), StoreCodec.decodeSourceApps(text))
+    }
+
+    @Test
+    fun hostAndPackageValidation() {
+        assertEquals("i.ytimg.com", StoreCodec.normalizeHost(" I.YTIMG.com "))
+        assertEquals("[fd00::1]", StoreCodec.normalizeHost("[FD00::1]"))
+        listOf("", "  ", "a b", "a/b", "x".repeat(254)).forEach { assertEquals(null, StoreCodec.normalizeHost(it)) }
+        listOf("com.example.app", "org.videolan.vlc", "a.b_c.D9").forEach { assertTrue(it, StoreCodec.isPackageName(it)) }
+        listOf("", "app", "com..app", ".com.app", "com.app.", "com.1app", "com.example app").forEach {
+            assertTrue(it, !StoreCodec.isPackageName(it))
+        }
+    }
 }

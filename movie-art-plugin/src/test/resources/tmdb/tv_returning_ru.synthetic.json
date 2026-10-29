@@ -1,12 +1,19 @@
 {
-  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /tv/{id}?language=ru-RU&append_to_response=images,translations,external_ids). Not a recorded response; ids, texts and file paths are invented.",
+  "_comment": "SYNTHETIC fixture, hand-written from TMDB v3 docs (GET /tv/{id}?language=ru-RU&append_to_response=images,translations,external_ids). Not a recorded response; ids, texts and file paths are invented. Season 3 is announced (no air date, no episodes): TMDB counts it in number_of_seasons.",
   "backdrop_path": null,
   "first_air_date": "2022-06-23",
   "genres": [{"id": 18, "name": "драма"}],
   "id": 136315,
   "last_air_date": "2026-04-16",
   "name": "Медведь",
-  "number_of_seasons": 2,
+  "number_of_seasons": 3,
+  "seasons": [
+    {"air_date": "2023-01-10", "episode_count": 1, "season_number": 0},
+    {"air_date": "2022-06-23", "episode_count": 8, "season_number": 1},
+    {"air_date": "2023-06-22", "episode_count": 10, "season_number": 2},
+    {"air_date": null, "episode_count": 0, "season_number": 3}
+  ],
+  "last_episode_to_air": {"episode_number": 10, "season_number": 2},
   "original_language": "en",
   "original_name": "The Bear",
   "overview": "",

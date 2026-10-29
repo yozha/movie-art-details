@@ -2,6 +2,7 @@ package io.github.yozha.movieartdetails.cache
 
 import io.github.yozha.movieartdetails.model.ImageInfo
 import io.github.yozha.movieartdetails.model.MediaType
+import io.github.yozha.movieartdetails.model.SeasonInfo
 import io.github.yozha.movieartdetails.model.SourceCache
 import io.github.yozha.movieartdetails.model.TitleDetails
 import io.github.yozha.movieartdetails.model.Translation
@@ -24,6 +25,8 @@ import java.io.File
  * - nothing older than 6 months is kept (TMDB Terms of Use).
  *
  * A write time in the future (device clock not yet synced via NTP) counts as age 0.
+ * Details written by an older schema lack newer fields (they read back as defaults) and count as expired:
+ * online they are refetched, offline they are still available with allowStale.
  * A corrupted file is a miss and gets deleted. All writes are atomic; methods are thread-safe.
  */
 class SourceCacheImpl(
@@ -47,7 +50,7 @@ class SourceCacheImpl(
         if (!file.isFile) return null
         val dto = if (file.length() > MAX_DETAILS_BYTES) null else runCatching {
             json.decodeFromString(CachedDetails.serializer(), file.readText())
-        }.getOrNull()?.takeIf { it.v == SCHEMA && it.mediaType == type.name && it.id == id && it.language == language }
+        }.getOrNull()?.takeIf { it.v in 1..DETAILS_SCHEMA && it.mediaType == type.name && it.id == id && it.language == language }
         if (dto == null) {
             delete(file)
             return null
@@ -57,7 +60,8 @@ class SourceCacheImpl(
             delete(file)
             return null
         }
-        return if (age <= DETAILS_TTL_MS || allowStale) dto.toModel(type) else null
+        val fresh = age <= DETAILS_TTL_MS && dto.v == DETAILS_SCHEMA
+        return if (fresh || allowStale) dto.toModel(type) else null
     }
 
     override fun putDetails(details: TitleDetails, language: String) {
@@ -214,7 +218,7 @@ class SourceCacheImpl(
         ensureInit()
         val loaded = if (!indexFile.isFile) null else runCatching {
             json.decodeFromString(IndexDto.serializer(), indexFile.readText())
-        }.getOrNull()?.takeIf { it.v == SCHEMA }
+        }.getOrNull()?.takeIf { it.v == INDEX_SCHEMA }
         if (loaded == null) indexFile.delete()
         val idx = MatchIndex(LinkedHashMap(loaded?.negatives.orEmpty()), LinkedHashMap(loaded?.matches.orEmpty()))
         idx.prune(clock())
@@ -226,7 +230,7 @@ class SourceCacheImpl(
     private fun saveIndex(idx: MatchIndex) {
         val now = clock()
         idx.prune(now)
-        val text = json.encodeToString(IndexDto.serializer(), IndexDto(SCHEMA, idx.negatives, idx.matches))
+        val text = json.encodeToString(IndexDto.serializer(), IndexDto(INDEX_SCHEMA, idx.negatives, idx.matches))
         AtomicFiles.write(indexFile, text.toByteArray(), now, lock)
     }
 
@@ -264,7 +268,19 @@ class SourceCacheImpl(
         val iso3166: String,
         val title: String? = null,
         val overview: String? = null,
-    )
+        val runtimeMinutes: Int? = null,
+    ) {
+        fun toModel() = Translation(iso639, iso3166, title, overview, runtimeMinutes)
+    }
+
+    @Serializable
+    private data class CachedSeason(
+        val number: Int,
+        val airDate: String? = null,
+        val episodeCount: Int,
+    ) {
+        fun toModel() = SeasonInfo(number, airDate, episodeCount)
+    }
 
     @Serializable
     private data class CachedImage(
@@ -301,25 +317,32 @@ class SourceCacheImpl(
         val logos: List<CachedImage> = emptyList(),
         val backdrops: List<CachedImage> = emptyList(),
         val imdbId: String? = null,
+        // Added in schema 2.
+        val genreIds: List<Int> = emptyList(),
+        val seasons: List<CachedSeason> = emptyList(),
+        val lastAiredSeason: Int? = null,
     ) {
         fun toModel(type: MediaType) = TitleDetails(
             mediaType = type, id = id, title = title, originalTitle = originalTitle, originalLanguage = originalLanguage,
             overview = overview, date = date, lastAirDate = lastAirDate, status = status, runtimeMinutes = runtimeMinutes,
             numberOfSeasons = numberOfSeasons, genres = genres, voteAverage = voteAverage, voteCount = voteCount,
             backdropPath = backdropPath,
-            translations = translations.map { Translation(it.iso639, it.iso3166, it.title, it.overview) },
+            translations = translations.map { it.toModel() },
             logos = logos.map { it.toModel() }, backdrops = backdrops.map { it.toModel() }, imdbId = imdbId,
+            genreIds = genreIds, seasons = seasons.map { it.toModel() }, lastAiredSeason = lastAiredSeason,
         )
 
         companion object {
             fun of(d: TitleDetails, language: String, now: Long) = CachedDetails(
-                v = SCHEMA, fetchedAt = now, language = language, mediaType = d.mediaType.name, id = d.id,
+                v = DETAILS_SCHEMA, fetchedAt = now, language = language, mediaType = d.mediaType.name, id = d.id,
                 title = d.title, originalTitle = d.originalTitle, originalLanguage = d.originalLanguage,
                 overview = d.overview, date = d.date, lastAirDate = d.lastAirDate, status = d.status,
                 runtimeMinutes = d.runtimeMinutes, numberOfSeasons = d.numberOfSeasons, genres = d.genres,
                 voteAverage = d.voteAverage, voteCount = d.voteCount, backdropPath = d.backdropPath,
-                translations = d.translations.map { CachedTranslation(it.iso639, it.iso3166, it.title, it.overview) },
+                translations = d.translations.map { CachedTranslation(it.iso639, it.iso3166, it.title, it.overview, it.runtimeMinutes) },
                 logos = d.logos.map(::image), backdrops = d.backdrops.map(::image), imdbId = d.imdbId,
+                genreIds = d.genreIds, seasons = d.seasons.map { CachedSeason(it.number, it.airDate, it.episodeCount) },
+                lastAiredSeason = d.lastAiredSeason,
             )
 
             private fun image(i: ImageInfo) = CachedImage(i.filePath, i.iso639, i.width, i.height, i.voteAverage)
@@ -341,7 +364,9 @@ class SourceCacheImpl(
         /** Expired matches (for offline use) are kept up to the TMDB limit. */
         const val MATCH_MAX_AGE_MS = TMDB_MAX_AGE_MS
 
-        private const val SCHEMA = 1
+        /** Version 2 added Translation.runtimeMinutes, genreIds, seasons and lastAiredSeason. */
+        private const val DETAILS_SCHEMA = 2
+        private const val INDEX_SCHEMA = 1
         private const val PURGE_INTERVAL_MS = 6 * HOUR
         private const val MAX_INDEX_ENTRIES = 1000
         private const val MAX_DETAILS_BYTES = 2L * 1024 * 1024

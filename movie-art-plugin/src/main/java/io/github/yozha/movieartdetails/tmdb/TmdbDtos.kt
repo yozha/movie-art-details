@@ -3,6 +3,7 @@ package io.github.yozha.movieartdetails.tmdb
 import io.github.yozha.movieartdetails.model.Candidate
 import io.github.yozha.movieartdetails.model.ImageInfo
 import io.github.yozha.movieartdetails.model.MediaType
+import io.github.yozha.movieartdetails.model.SeasonInfo
 import io.github.yozha.movieartdetails.model.TitleDetails
 import io.github.yozha.movieartdetails.model.Translation
 import kotlinx.serialization.SerialName
@@ -22,7 +23,11 @@ internal val tmdbJson = Json {
 }
 
 @Serializable
-internal data class SearchPageDto(val results: List<SearchItemDto> = emptyList())
+internal data class SearchPageDto(
+    val results: List<SearchItemDto> = emptyList(),
+    @SerialName("total_pages") val totalPages: Int? = null,
+    @SerialName("total_results") val totalResults: Int? = null,
+)
 
 @Serializable
 internal data class FindDto(
@@ -45,7 +50,17 @@ internal data class SearchItemDto(
 )
 
 @Serializable
-internal data class GenreDto(val name: String? = null)
+internal data class GenreDto(val id: Int = 0, val name: String? = null)
+
+@Serializable
+internal data class SeasonDto(
+    @SerialName("season_number") val seasonNumber: Int? = null,
+    @SerialName("air_date") val airDate: String? = null,
+    @SerialName("episode_count") val episodeCount: Int = 0,
+)
+
+@Serializable
+internal data class EpisodeDto(@SerialName("season_number") val seasonNumber: Int? = null)
 
 @Serializable
 internal data class ImageDto(
@@ -67,6 +82,8 @@ internal data class TranslationDataDto(
     val title: String? = null,
     val name: String? = null,
     val overview: String? = null,
+    /** Movies only. */
+    val runtime: Int? = null,
 )
 
 @Serializable
@@ -79,6 +96,7 @@ internal data class TranslationDto(
 @Serializable
 internal data class TranslationsDto(val translations: List<TranslationDto> = emptyList())
 
+/** No longer requested (nothing reads a series' IMDb ID); still parsed if present. */
 @Serializable
 internal data class ExternalIdsDto(@SerialName("imdb_id") val imdbId: String? = null)
 
@@ -97,6 +115,8 @@ internal data class DetailsDto(
     val status: String? = null,
     val runtime: Int? = null,
     @SerialName("number_of_seasons") val numberOfSeasons: Int? = null,
+    val seasons: List<SeasonDto> = emptyList(),
+    @SerialName("last_episode_to_air") val lastEpisodeToAir: EpisodeDto? = null,
     val genres: List<GenreDto> = emptyList(),
     @SerialName("vote_average") val voteAverage: Double = 0.0,
     @SerialName("vote_count") val voteCount: Int = 0,
@@ -146,6 +166,7 @@ internal fun DetailsDto.toDetails(type: MediaType): TitleDetails {
     require(id > 0) { "details without id" }
     val original = (originalTitle ?: originalName).orNullIfBlank()
     val shown = (title ?: name).orNullIfBlank() ?: original.orEmpty()
+    val namedGenres = genres.mapNotNull { g -> g.name.orNullIfBlank()?.let { it to g.id.coerceAtLeast(0) } }
     return TitleDetails(
         mediaType = type,
         id = id,
@@ -158,7 +179,7 @@ internal fun DetailsDto.toDetails(type: MediaType): TitleDetails {
         status = status.orNullIfBlank(),
         runtimeMinutes = runtime?.takeIf { it > 0 },
         numberOfSeasons = numberOfSeasons?.takeIf { it > 0 },
-        genres = genres.mapNotNull { it.name.orNullIfBlank() },
+        genres = namedGenres.map { it.first },
         voteAverage = voteAverage,
         voteCount = voteCount,
         backdropPath = backdropPath.orNullIfBlank(),
@@ -169,10 +190,17 @@ internal fun DetailsDto.toDetails(type: MediaType): TitleDetails {
                 iso3166 = t.iso3166.orNullIfBlank()?.uppercase().orEmpty(),
                 title = (t.data?.title ?: t.data?.name).orNullIfBlank(),
                 overview = t.data?.overview.orNullIfBlank(),
+                runtimeMinutes = t.data?.runtime?.takeIf { it > 0 },
             )
         },
         logos = images?.logos.orEmpty().mapNotNull { it.toImage() },
         backdrops = images?.backdrops.orEmpty().mapNotNull { it.toImage() },
         imdbId = (imdbId ?: externalIds?.imdbId).orNullIfBlank(),
+        genreIds = namedGenres.map { it.second },
+        seasons = seasons.mapNotNull { season ->
+            val number = season.seasonNumber ?: return@mapNotNull null
+            SeasonInfo(number, season.airDate.orNullIfBlank(), season.episodeCount.coerceAtLeast(0))
+        },
+        lastAiredSeason = lastEpisodeToAir?.seasonNumber?.takeIf { it > 0 },
     )
 }

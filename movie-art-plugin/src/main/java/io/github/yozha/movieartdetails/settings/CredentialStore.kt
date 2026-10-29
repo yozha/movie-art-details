@@ -23,7 +23,8 @@ import javax.crypto.spec.GCMParameterSpec
  * The decrypted key is kept in process memory (get() is called for every TMDB request).
  * If the file cannot be decrypted (Keystore key lost, file corrupted), it is deleted and there is no key;
  * on a transient Keystore failure the file is kept, and get() returns null and retries next time.
- * Without a stored key, debug builds fall back to BuildConfig.DEV_TMDB_KEY (empty in release).
+ * Without a stored key, debug builds fall back to BuildConfig.DEV_TMDB_KEY (empty in release), which may be
+ * either a v3 key or an API Read Access Token.
  * The key is never logged. Methods block; do not call them on the main thread.
  */
 class CredentialStore(context: Context) : CredentialRepository {
@@ -56,7 +57,11 @@ class CredentialStore(context: Context) : CredentialRepository {
     /** true if the user entered a key; false if there is no key or only the build's dev key. */
     fun hasUserKey(): Boolean = stored() != null
 
-    private fun devKey(): String? = if (BuildConfig.DEBUG) KeyFormat.normalize(BuildConfig.DEV_TMDB_KEY) else null
+    private fun devKey(): String? {
+        if (!BuildConfig.DEBUG) return null
+        val raw = BuildConfig.DEV_TMDB_KEY
+        return KeyFormat.normalize(raw) ?: raw.trim().takeIf(KeyFormat::isReadAccessToken)
+    }
 
     private fun stored(): String? {
         cache?.let { return it.key }

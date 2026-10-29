@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * noBackupFilesDir/diagnostics.log (excluded from Auto Backup). Events are recorded only when the mode is enabled
  * ([enabled]); the last TMDB error is always kept, since settings display its status.
  *
- * Every line goes through [sanitize]: URLs, api_key and 32-char hex sequences are stripped
+ * Every line goes through [sanitize]: URLs, api_key values, 32-char hex sequences and JWT-shaped tokens are stripped
  * even if the caller slips up. Only Coordinator passes card titles here, and only when allowed to.
  */
 class DiagnosticsLog internal constructor(
@@ -107,12 +107,14 @@ class DiagnosticsLog internal constructor(
         private val URL = Regex("""(?i)\b(?:https?|content|file)://\S+""")
         private val API_KEY = Regex("""(?i)api_key=[^&\s]*""")
         private val HEX32 = Regex("""(?i)\b[0-9a-f]{32,}\b""")
+        private val JWT = Regex("""\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+""")
         private val WS = Regex("""\s+""")
 
         internal fun sanitize(line: String): String = line
             .replace(URL, "<uri>")
             .replace(API_KEY, "api_key=***")
             .replace(HEX32, "***")
+            .replace(JWT, "***")
             .replace(WS, " ")
             .trim()
             .take(MAX_LINE)

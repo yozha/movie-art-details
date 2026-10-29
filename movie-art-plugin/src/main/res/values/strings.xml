@@ -47,7 +47,7 @@
     <!-- Appearance -->
     <string name="appearance_title">Appearance</string>
     <string name="appearance_summary">Text size, position, fields, preview</string>
-    <string name="appearance_description">Values are limited so the info block never covers the clock (top right) or the card row (bottom half).</string>
+    <string name="appearance_description">Values are limited so the info block never covers the clock (top right) or the card row. If you turned off Projectivy\'s bottom info panel and moved the card row lower, set the card row position to match: the block gets room for more description lines.</string>
     <string name="appearance_preset">Text size</string>
     <string name="preset_small">Small</string>
     <string name="preset_medium">Medium</string>
@@ -55,12 +55,18 @@
     <string name="appearance_left">Left margin</string>
     <string name="appearance_top">Top margin</string>
     <string name="appearance_width">Block width</string>
-    <string name="appearance_bottom">Bottom edge limit</string>
+    <string name="appearance_row_position">Card row position</string>
+    <string name="appearance_row_gap">Space above the card row</string>
+    <string name="appearance_anchor">Block position</string>
+    <string name="anchor_top">Top</string>
+    <string name="anchor_above_row">Above the card row</string>
     <string name="appearance_overview_lines">Description lines</string>
     <string name="appearance_scrim">Background dimming</string>
     <string name="appearance_neutral">Neutral background</string>
     <string name="appearance_tint_from_card">Tint with app color</string>
     <string name="appearance_tint_from_card_hint">For app cards, tint the neutral background with the app\'s color</string>
+    <string name="appearance_title_unrecognized">Show title when not recognized</string>
+    <string name="appearance_title_unrecognized_hint">For app cards and cards without TMDB details, show the card title and app logo on the neutral background</string>
     <string name="neutral_graphite">Graphite</string>
     <string name="neutral_black">Black</string>
     <string name="neutral_navy">Navy</string>
@@ -68,6 +74,8 @@
     <string name="appearance_min_votes">Minimum votes to show rating</string>
     <string name="appearance_min_votes_any">No minimum</string>
     <string name="field_logo">Logo</string>
+    <string name="field_app_badge">App logo</string>
+    <string name="field_app_badge_hint">Banner or icon of the app the card comes from, next to the year and rating</string>
     <string name="field_year">Year</string>
     <string name="field_type">Type (movie or series)</string>
     <string name="field_duration">Runtime</string>
@@ -137,6 +145,15 @@
     <string name="mappings_delete">Delete</string>
     <string name="mapping_target_format">%1$s, TMDB %2$d</string>
     <string name="mapping_ignored">Don\'t recognize</string>
+    <string name="source_app">Source app</string>
+    <string name="source_app_description">Choose the app whose cards use images from this address. Its banner or icon is shown in the info block. Stored only on this device.</string>
+    <string name="source_app_auto_format">%1$s (automatic)</string>
+    <string name="source_app_unknown">Unknown</string>
+    <string name="source_app_automatic">Automatic</string>
+    <string name="source_app_automatic_hint">Detect the app automatically when possible</string>
+    <string name="source_app_detected_format">Detected: %1$s</string>
+    <string name="source_app_selected">Selected</string>
+    <string name="source_app_empty">No apps found</string>
 
     <!-- Cache -->
     <string name="cache_title">Cache</string>

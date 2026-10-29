@@ -3,6 +3,7 @@ package io.github.yozha.movieartdetails.settings
 import android.content.Context
 import android.content.SharedPreferences
 import io.github.yozha.movieartdetails.model.AppearanceSettings
+import io.github.yozha.movieartdetails.model.BlockAnchor
 import io.github.yozha.movieartdetails.model.DisplayLanguage
 import io.github.yozha.movieartdetails.model.SettingsRepository
 import io.github.yozha.movieartdetails.model.TextPreset
@@ -36,7 +37,9 @@ class AppSettings(context: Context) : SettingsRepository {
                 leftPct = prefs.getFloat(K_LEFT, d.leftPct),
                 topPct = prefs.getFloat(K_TOP, d.topPct),
                 blockWidthPct = prefs.getFloat(K_WIDTH, d.blockWidthPct),
-                bottomLimitPct = prefs.getFloat(K_BOTTOM, d.bottomLimitPct),
+                rowPositionPct = prefs.getFloat(K_ROW, d.rowPositionPct),
+                rowGapPct = storedRowGap(d),
+                blockAnchor = BlockAnchor.entries.firstOrNull { it.name == prefs.getString(K_ANCHOR, null) } ?: d.blockAnchor,
                 overviewLines = prefs.getInt(K_LINES, d.overviewLines),
                 scrimIntensity = prefs.getFloat(K_SCRIM, d.scrimIntensity),
                 showLogo = prefs.getBoolean(K_LOGO, d.showLogo),
@@ -46,8 +49,16 @@ class AppSettings(context: Context) : SettingsRepository {
                 showGenres = prefs.getBoolean(K_GENRES, d.showGenres),
                 showRating = prefs.getBoolean(K_RATING, d.showRating),
                 showOverview = prefs.getBoolean(K_OVERVIEW, d.showOverview),
+                showAppBadge = prefs.getBoolean(K_APP_BADGE, d.showAppBadge),
             ),
         )
+    }
+
+    /** The gap, or the gap left by a bottom limit stored before the row position existed (the row was then at 55%). */
+    private fun storedRowGap(d: AppearanceSettings): Float = when {
+        prefs.contains(K_ROW_GAP) -> prefs.getFloat(K_ROW_GAP, d.rowGapPct)
+        prefs.contains(K_LEGACY_BOTTOM) -> PrefsCodec.LEGACY_ROW_PCT - prefs.getFloat(K_LEGACY_BOTTOM, d.bottomLimitPct)
+        else -> d.rowGapPct
     }
 
     override fun minVoteCount(): Int = prefs.getInt(K_MIN_VOTES, DEFAULT_MIN_VOTES).coerceIn(PrefsCodec.MIN_VOTES)
@@ -60,6 +71,9 @@ class AppSettings(context: Context) : SettingsRepository {
 
     /** Tint the neutral background on app cards from their darkColor; off by default. */
     override fun tintNeutralFromCard(): Boolean = prefs.getBoolean(K_TINT, false)
+
+    /** On by default; off keeps the bare neutral color for cards that are not recognized and for app cards. */
+    override fun showTitleWhenUnrecognized(): Boolean = prefs.getBoolean(K_TITLED, true)
 
     override fun diagnosticsEnabled(): Boolean = local.getBoolean(K_DIAG, false)
 
@@ -83,12 +97,14 @@ class AppSettings(context: Context) : SettingsRepository {
 
     fun setTintNeutralFromCard(on: Boolean) = prefs.edit().putBoolean(K_TINT, on).apply()
 
+    fun setShowTitleWhenUnrecognized(on: Boolean) = prefs.edit().putBoolean(K_TITLED, on).apply()
+
     fun setDiagnosticsEnabled(on: Boolean) = local.edit().putBoolean(K_DIAG, on).apply()
 
     fun setLogTitlesInDiagnostics(on: Boolean) = local.edit().putBoolean(K_DIAG_TITLES, on).apply()
 
     override fun exportJson(): String = PrefsCodec.encode(
-        PrefsSnapshot(languageChoice(), appearance(), minVoteCount(), cacheLimitMb(), neutralColor()),
+        PrefsSnapshot(languageChoice(), appearance(), minVoteCount(), cacheLimitMb(), neutralColor(), showTitleWhenUnrecognized()),
     )
 
     /** No clear(): only recognized allowlisted fields are written; commit, so the host gets an accurate result. */
@@ -99,6 +115,7 @@ class AppSettings(context: Context) : SettingsRepository {
         patch.minVoteCount?.let { e.putInt(K_MIN_VOTES, it) }
         patch.cacheLimitMb?.let { e.putInt(K_CACHE_MB, it) }
         patch.neutralColor?.let { e.putString(K_NEUTRAL, it) }
+        patch.showTitleWhenUnrecognized?.let { e.putBoolean(K_TITLED, it) }
         patch.appearance?.let { e.putAppearance(it) }
         return e.commit()
     }
@@ -108,7 +125,10 @@ class AppSettings(context: Context) : SettingsRepository {
         .putFloat(K_LEFT, a.leftPct)
         .putFloat(K_TOP, a.topPct)
         .putFloat(K_WIDTH, a.blockWidthPct)
-        .putFloat(K_BOTTOM, a.bottomLimitPct)
+        .putFloat(K_ROW, a.rowPositionPct)
+        .putFloat(K_ROW_GAP, a.rowGapPct)
+        .putString(K_ANCHOR, a.blockAnchor.name)
+        .remove(K_LEGACY_BOTTOM)
         .putInt(K_LINES, a.overviewLines)
         .putFloat(K_SCRIM, a.scrimIntensity)
         .putBoolean(K_LOGO, a.showLogo)
@@ -118,6 +138,7 @@ class AppSettings(context: Context) : SettingsRepository {
         .putBoolean(K_GENRES, a.showGenres)
         .putBoolean(K_RATING, a.showRating)
         .putBoolean(K_OVERVIEW, a.showOverview)
+        .putBoolean(K_APP_BADGE, a.showAppBadge)
 
     companion object {
         const val PREFS = "settings"
@@ -131,11 +152,16 @@ class AppSettings(context: Context) : SettingsRepository {
         private const val K_CACHE_MB = "cache_limit_mb"
         private const val K_NEUTRAL = "neutral_color"
         private const val K_TINT = "neutral_tint_from_card"
+        private const val K_TITLED = "neutral_show_title"
         private const val K_PRESET = "appearance_text_preset"
         private const val K_LEFT = "appearance_left_pct"
         private const val K_TOP = "appearance_top_pct"
         private const val K_WIDTH = "appearance_block_width_pct"
-        private const val K_BOTTOM = "appearance_bottom_limit_pct"
+        private const val K_ROW = "appearance_row_position_pct"
+        private const val K_ROW_GAP = "appearance_row_gap_pct"
+        private const val K_ANCHOR = "appearance_block_anchor"
+        /** Replaced by K_ROW and K_ROW_GAP; read once for migration and removed on the next write. */
+        private const val K_LEGACY_BOTTOM = "appearance_bottom_limit_pct"
         private const val K_LINES = "appearance_overview_lines"
         private const val K_SCRIM = "appearance_scrim_intensity"
         private const val K_LOGO = "appearance_show_logo"
@@ -145,6 +171,7 @@ class AppSettings(context: Context) : SettingsRepository {
         private const val K_GENRES = "appearance_show_genres"
         private const val K_RATING = "appearance_show_rating"
         private const val K_OVERVIEW = "appearance_show_overview"
+        private const val K_APP_BADGE = "appearance_show_app_badge"
         private const val K_DIAG = "diagnostics_enabled"
         private const val K_DIAG_TITLES = "diagnostics_log_titles"
     }
